@@ -5,6 +5,7 @@ import {
   getApiKey, setApiKey, getProxyUrl, setProxyUrl,
   getGhToken, setGhToken, getLastSync,
   getAiResult, setAiResult, episodeKey,
+  getPosition, hasPlayed,
 } from './storage.js';
 import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
@@ -181,6 +182,11 @@ async function openShow(show) {
       <div class="show-desc desc-clamp" id="show-desc">${esc(desc)}</div>
       <button class="desc-toggle" id="desc-toggle">すべて表示</button>` : ''}
     <h3 class="section-heading" id="episode-list-heading">エピソード（${feed.episodes.length}件）</h3>
+    <div class="seg-tabs" id="episode-tabs">
+      <button class="seg-tab active" data-tab="all">All</button>
+      <button class="seg-tab" data-tab="fresh">Fresh</button>
+      <button class="seg-tab" data-tab="playing">Playing</button>
+    </div>
     <input type="search" id="episode-search" class="episode-search"
            placeholder="タイトル・概要で絞り込み" autocomplete="off">
     <ul class="episode-list" id="episode-list"></ul>
@@ -192,31 +198,52 @@ async function openShow(show) {
     $('episode-list-heading').textContent = `エピソード（${list.length}件）`;
     const ul = $('episode-list');
     ul.innerHTML = list.length
-      ? list.map((ep, i) => `
+      ? list.map((ep, i) => {
+          const key = episodeKey(show.id, ep);
+          const pos = getPosition(key);
+          return `
         <li class="episode-item" data-ep="${i}">
           <div class="episode-date">${esc(fmtDate(ep.pubDate))}</div>
           <div class="episode-title">${esc(ep.title)}</div>
           <div class="episode-sub">
             ${ep.durationSec ? `<span>${esc(fmtDuration(ep.durationSec))}</span>` : ''}
+            ${pos > 0 ? `<span class="badge">途中 ${esc(fmtDuration(pos))}</span>` : ''}
             ${ep.transcripts.length ? '<span class="badge">文字起こしあり</span>' : ''}
-            ${getAiResult(episodeKey(show.id, ep)) ? '<span class="badge">要約済み</span>' : ''}
+            ${getAiResult(key) ? '<span class="badge">要約済み</span>' : ''}
           </div>
-        </li>`).join('')
+        </li>`;
+        }).join('')
       : '<li class="empty-note">一致するエピソードがありません</li>';
     ul.querySelectorAll('.episode-item').forEach((item) => {
       item.addEventListener('click', () => openEpisode(epShow, list[Number(item.dataset.ep)]));
     });
   }
 
-  renderEpisodeList(feed.episodes);
-  $('episode-search').addEventListener('input', (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    renderEpisodeList(
-      !q
-        ? feed.episodes
-        : feed.episodes.filter((ep) =>
-            (ep.title + ' ' + ep.description).toLowerCase().includes(q))
-    );
+  // タブ（All / Fresh / Playing）と検索語の組み合わせで絞り込む
+  let currentTab = 'all';
+  function applyFilters() {
+    let list = feed.episodes;
+    if (currentTab === 'fresh') {
+      list = list.filter((ep) => !hasPlayed(episodeKey(show.id, ep)));
+    } else if (currentTab === 'playing') {
+      list = list.filter((ep) => getPosition(episodeKey(show.id, ep)) > 0);
+    }
+    const q = $('episode-search').value.trim().toLowerCase();
+    if (q) {
+      list = list.filter((ep) => (ep.title + ' ' + ep.description).toLowerCase().includes(q));
+    }
+    renderEpisodeList(list);
+  }
+
+  applyFilters();
+  $('episode-search').addEventListener('input', applyFilters);
+  $('episode-tabs').querySelectorAll('.seg-tab').forEach((tabBtn) => {
+    tabBtn.addEventListener('click', () => {
+      currentTab = tabBtn.dataset.tab;
+      $('episode-tabs').querySelectorAll('.seg-tab')
+        .forEach((t) => t.classList.toggle('active', t === tabBtn));
+      applyFilters();
+    });
   });
 
   $('show-fav-btn').addEventListener('click', (e) => {

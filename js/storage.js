@@ -168,6 +168,11 @@ export function getPosition(episodeKey) {
   }
 }
 
+// 一度でも再生されたか（再生位置の記録が存在するか）
+export function hasPlayed(episodeKey) {
+  return localStorage.getItem(K.pos + episodeKey) !== null;
+}
+
 export function setPosition(episodeKey, seconds) {
   try {
     localStorage.setItem(
