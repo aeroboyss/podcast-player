@@ -7,8 +7,12 @@ cd "$(dirname "$0")"
 REPO_NAME="podcast-player"
 
 if ! command -v gh >/dev/null; then
-  echo "gh CLI が見つかりません。https://cli.github.com/ からインストールしてください。" >&2
-  exit 1
+  if [ -x "$HOME/.local/bin/gh" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+  else
+    echo "gh CLI が見つかりません。https://cli.github.com/ からインストールしてください。" >&2
+    exit 1
+  fi
 fi
 if ! gh auth status >/dev/null 2>&1; then
   echo "gh が未認証です。先に 'gh auth login' を実行してください。" >&2
