@@ -38,6 +38,9 @@ const views = { home: $('view-home'), search: $('view-search'), settings: $('vie
 
 document.querySelectorAll('.tab').forEach((tab) => {
   tab.addEventListener('click', () => {
+    // 番組詳細・エピソード詳細のオーバーレイを閉じてからビューを切り替える
+    $('show-panel').classList.add('hidden');
+    $('episode-panel').classList.add('hidden');
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
     const name = tab.dataset.view;
     Object.entries(views).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
