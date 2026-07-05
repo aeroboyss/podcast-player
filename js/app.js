@@ -13,7 +13,6 @@ import { generateStudyAid, testApiKey } from './gemini.js';
 import { Player } from './player.js';
 
 const player = new Player();
-window.__pp = { player }; // デバッグ・動作検証用
 
 const $ = (id) => document.getElementById(id);
 
@@ -279,13 +278,13 @@ function renderAiSection(show, episode) {
 
   const hasTranscript = (episode.transcripts || []).length > 0;
   section.innerHTML = `
-    <h3>AI 要約とクイズ</h3>
+    <h3>AI 分析とクイズ</h3>
     <p class="ai-note">
-      ${hasTranscript
-        ? 'この番組は文字起こしを提供しています。テキストから要約と4択クイズ（5問）を生成します。'
-        : '文字起こしが提供されていないため、エピソード音声を Gemini に渡して要約と4択クイズ（5問）を生成します。音声の長さによっては数分かかります。'}
+      重要ポイント・立てるべき問い（3つ）・理解度クイズ（4択5問）を生成します。${hasTranscript
+        ? 'この番組は文字起こしを提供しているため、テキストから生成します。'
+        : '文字起こしがないため、エピソード音声を Gemini に渡して生成します。音声の長さによっては数分かかります。'}
     </p>
-    <button class="btn btn-primary btn-block" id="ai-generate-btn">要約とクイズを生成</button>
+    <button class="btn btn-primary btn-block" id="ai-generate-btn">分析とクイズを生成</button>
     <div id="ai-status"></div>
   `;
   $('ai-generate-btn').addEventListener('click', () => runGenerate(show, episode));
@@ -322,13 +321,20 @@ async function runGenerate(show, episode) {
 function renderAiResult(section, show, episode, result) {
   const date = new Date(result.generatedAt);
   section.innerHTML = `
-    <h3>AI 要約</h3>
-    <div class="ai-summary">${esc(result.summary)}</div>
+    <h3>重要ポイント</h3>
     ${Array.isArray(result.keyPoints) && result.keyPoints.length ? `
-      <h3>重要ポイント</h3>
       <ul class="ai-keypoints">
         ${result.keyPoints.map((p) => `<li>${esc(p)}</li>`).join('')}
-      </ul>` : ''}
+      </ul>` : '<p class="ai-note">重要ポイントがありません</p>'}
+    ${Array.isArray(result.keyQuestions) && result.keyQuestions.length ? `
+      <h3 style="margin-top:18px">立てるべき問い</h3>
+      <div class="ai-questions">
+        ${result.keyQuestions.map((q, i) => `
+          <div class="ai-qa">
+            <div class="ai-qa-q">Q${i + 1}. ${esc(q.question)}</div>
+            <div class="ai-qa-a">${esc(q.answer)}</div>
+          </div>`).join('')}
+      </div>` : ''}
     <h3 style="margin-top:18px">理解度クイズ</h3>
     <div id="quiz-container"></div>
     <div class="ai-meta">

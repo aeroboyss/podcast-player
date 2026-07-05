@@ -296,10 +296,24 @@ html, body {
   line-height: 1.6;
 }
 .ai-error { color: var(--danger); font-size: 13px; line-height: 1.6; padding-top: 8px; white-space: pre-line; }
-.ai-summary { font-size: 14.5px; line-height: 1.8; margin: 10px 0; white-space: pre-line; }
 .ai-keypoints { margin: 8px 0 4px 2px; padding-left: 18px; }
-.ai-keypoints li { font-size: 14px; line-height: 1.7; margin-bottom: 4px; }
+.ai-keypoints li { font-size: 14px; line-height: 1.7; margin-bottom: 6px; }
 .ai-meta { font-size: 11.5px; color: var(--text-dim); margin-top: 10px; }
+
+.ai-questions { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.ai-qa {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.ai-qa-q { font-size: 14px; font-weight: 700; line-height: 1.6; margin-bottom: 6px; }
+.ai-qa-a {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-dim);
+  white-space: pre-line;
+}
 
 /* quiz */
 .quiz-q { margin-top: 18px; }
