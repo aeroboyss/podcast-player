@@ -2,7 +2,7 @@
 
 import {
   episodeKey, getPosition, setPosition,
-  getShowRate, setShowRate, PLAYBACK_RATES,
+  getShowRate, setShowRate,
   getShowSkip, getNowPlaying, setNowPlaying,
 } from './storage.js';
 import { scheduleSync } from './sync.js';
@@ -43,7 +43,10 @@ export class Player {
       iconPause: document.getElementById('icon-pause'),
       rewind: document.getElementById('btn-rewind'),
       forward: document.getElementById('btn-forward'),
-      rate: document.getElementById('btn-rate'),
+      settings: document.getElementById('btn-player-settings'),
+      settingsStatus: document.getElementById('player-settings-status'),
+      settingsOverlay: document.getElementById('player-settings-overlay'),
+      rateOptions: document.getElementById('rate-options'),
       sleep: document.getElementById('btn-sleep'),
       sleepLabel: document.getElementById('sleep-label'),
     };
@@ -59,8 +62,28 @@ export class Player {
     this.el.play.addEventListener('click', () => this.toggle());
     this.el.rewind.addEventListener('click', () => this.seekBy(-SKIP_BACK));
     this.el.forward.addEventListener('click', () => this.seekBy(SKIP_FORWARD));
-    this.el.rate.addEventListener('click', () => this.cycleRate());
     this.el.sleep.addEventListener('click', () => this.toggleSleepTimer());
+
+    // 再生設定シートの開閉
+    this.el.settings.addEventListener('click', () => {
+      this.el.settingsOverlay.classList.remove('hidden');
+      this._applyRate();
+    });
+    this.el.settingsOverlay.addEventListener('click', (e) => {
+      if (e.target === this.el.settingsOverlay) {
+        this.el.settingsOverlay.classList.add('hidden');
+      }
+    });
+
+    // 倍速の選択（セグメント）
+    this.el.rateOptions.querySelectorAll('[data-rate]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (!this.current) return;
+        setShowRate(this.current.show.id, Number(btn.dataset.rate));
+        this._applyRate();
+        scheduleSync();
+      });
+    });
     this.el.range.addEventListener('input', () => {
       this._seeking = true;
       this.el.current.textContent = fmtTime(Number(this.el.range.value));
@@ -127,22 +150,30 @@ export class Player {
     this.el.iconPause.classList.toggle('hidden', !playing);
   }
 
-  // 番組ごとの再生速度を audio と表示に反映
+  // 番組ごとの再生速度を audio・セグメント表示・設定ボタンに反映
   _applyRate() {
     if (!this.current) return;
     const rate = getShowRate(this.current.show.id);
     this.audio.playbackRate = rate;
     this.audio.defaultPlaybackRate = rate;
-    this.el.rate.textContent = rate.toFixed(1) + 'x';
+    this.el.rateOptions.querySelectorAll('[data-rate]').forEach((btn) => {
+      btn.classList.toggle('active', Number(btn.dataset.rate) === rate);
+    });
+    this._updateSettingsStatus();
   }
 
-  cycleRate() {
-    if (!this.current) return;
-    const rate = getShowRate(this.current.show.id);
-    const next = PLAYBACK_RATES[(PLAYBACK_RATES.indexOf(rate) + 1) % PLAYBACK_RATES.length];
-    setShowRate(this.current.show.id, next);
-    this._applyRate();
-    scheduleSync();
+  // 設定ボタン横に現在の状態（倍速・タイマー残り）を要約表示
+  _updateSettingsStatus() {
+    const parts = [];
+    if (this.current) {
+      const rate = getShowRate(this.current.show.id);
+      if (rate !== 1) parts.push(rate.toFixed(1) + 'x');
+    }
+    if (this._sleepDeadline) {
+      parts.push(Math.ceil((this._sleepDeadline - Date.now()) / 60000) + '分');
+    }
+    this.el.settingsStatus.textContent = parts.join('・');
+    this.el.settings.classList.toggle('active', !!this._sleepDeadline);
   }
 
   // ---- 睡眠タイマー（20分で自動停止） ----
@@ -170,7 +201,8 @@ export class Player {
 
   _updateSleepLabel() {
     const remainMin = Math.ceil((this._sleepDeadline - Date.now()) / 60000);
-    this.el.sleepLabel.textContent = remainMin + '分';
+    this.el.sleepLabel.textContent = `残り ${remainMin}分（タップで解除）`;
+    this._updateSettingsStatus();
   }
 
   _clearSleepTimer() {
@@ -178,7 +210,8 @@ export class Player {
     this._sleepInterval = null;
     this._sleepDeadline = null;
     this.el.sleep.classList.remove('active');
-    this.el.sleepLabel.textContent = SLEEP_MINUTES + '分';
+    this.el.sleepLabel.textContent = SLEEP_MINUTES + '分で停止';
+    this._updateSettingsStatus();
   }
 
   // エピソードの終わり手前で自動終了（番組ごとの outro 設定）

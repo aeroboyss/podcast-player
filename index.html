@@ -110,9 +110,9 @@
       <span id="player-duration" class="player-time">0:00</span>
     </div>
     <div class="player-controls">
-      <button id="btn-sleep" class="btn-rate btn-sleep" aria-label="睡眠タイマー（20分で自動停止）">
-        <svg viewBox="0 0 24 24"><path d="M12.3 4.9c.4-.2.6-.7.5-1.1-.1-.5-.6-.8-1-.8C6.8 3.1 3 7.1 3 12c0 5 4 9 9 9 4.9 0 8.9-3.8 9-8.8 0-.5-.3-.9-.8-1-.4-.1-.9.1-1.1.5-.9 1.7-2.7 2.8-4.6 2.8-2.9 0-5.2-2.3-5.2-5.2 0-1.9 1.1-3.7 2.8-4.6z"/></svg>
-        <span id="sleep-label">20分</span>
+      <button id="btn-player-settings" class="btn-rate btn-player-settings" aria-label="再生設定">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 00.12-.61l-1.92-3.32a.5.5 0 00-.59-.22l-2.39.96a7.03 7.03 0 00-1.62-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 00-.59.22L2.68 8.87a.5.5 0 00.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.5.5 0 00-.12.61l1.92 3.32c.14.24.42.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.23.09.49 0 .59-.22l1.92-3.32a.5.5 0 00-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+        <span id="player-settings-status"></span>
       </button>
       <div class="player-transport">
         <button id="btn-rewind" class="btn-player" aria-label="30秒巻き戻し">
@@ -128,7 +128,28 @@
           <span class="btn-player-label">15</span>
         </button>
       </div>
-      <button id="btn-rate" class="btn-rate" aria-label="再生速度">1.0x</button>
+    </div>
+  </div>
+
+  <!-- 再生設定シート -->
+  <div id="player-settings-overlay" class="sheet-overlay hidden">
+    <div class="sheet">
+      <div class="sheet-title">再生設定</div>
+      <div class="sheet-row">
+        <span class="sheet-label">スリープタイマー</span>
+        <button id="btn-sleep" class="btn-rate btn-sleep" aria-label="睡眠タイマー（20分で自動停止）">
+          <svg viewBox="0 0 24 24"><path d="M12.3 4.9c.4-.2.6-.7.5-1.1-.1-.5-.6-.8-1-.8C6.8 3.1 3 7.1 3 12c0 5 4 9 9 9 4.9 0 8.9-3.8 9-8.8 0-.5-.3-.9-.8-1-.4-.1-.9.1-1.1.5-.9 1.7-2.7 2.8-4.6 2.8-2.9 0-5.2-2.3-5.2-5.2 0-1.9 1.1-3.7 2.8-4.6z"/></svg>
+          <span id="sleep-label">20分で停止</span>
+        </button>
+      </div>
+      <div class="sheet-row">
+        <span class="sheet-label">再生速度</span>
+        <div class="seg-tabs seg-compact" id="rate-options">
+          <button class="seg-tab" data-rate="1">1.0x</button>
+          <button class="seg-tab" data-rate="1.1">1.1x</button>
+          <button class="seg-tab" data-rate="1.2">1.2x</button>
+        </div>
+      </div>
     </div>
   </div>
 

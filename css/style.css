@@ -473,8 +473,6 @@ input[type="range"]::-webkit-slider-thumb {
   gap: 34px;
 }
 .btn-rate {
-  grid-column: 3;
-  justify-self: end;
   background: none;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -486,22 +484,67 @@ input[type="range"]::-webkit-slider-thumb {
   font-variant-numeric: tabular-nums;
 }
 .btn-sleep {
-  grid-column: 1;
-  justify-self: start;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 .btn-sleep svg { width: 14px; height: 14px; fill: currentColor; }
 .btn-sleep.active {
   color: var(--accent);
   border-color: var(--accent);
 }
+.btn-player-settings {
+  grid-column: 1;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-player-settings svg { width: 17px; height: 17px; fill: currentColor; }
+.btn-player-settings.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+#player-settings-status:empty { display: none; }
 
-/* 狭い画面では中央ボタン群の間隔を詰めて左右のボタンとの余白を確保 */
+/* ---------- 再生設定シート ---------- */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 60;
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-elevated);
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 18px 20px calc(env(safe-area-inset-bottom) + 22px);
+  max-width: 640px;
+  margin: 0 auto;
+}
+.sheet-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.sheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+}
+.sheet-row + .sheet-row { border-top: 1px solid var(--border); }
+.sheet-label { font-size: 14px; }
+.seg-compact { width: 190px; margin: 0; }
+
+/* 狭い画面では中央ボタン群の間隔を詰めて左のボタンとの余白を確保 */
 @media (max-width: 420px) {
   .player-transport { gap: 20px; }
-  .btn-sleep, .btn-rate { padding: 6px 7px; font-size: 12px; }
+  .btn-player-settings { padding: 6px 8px; font-size: 12px; }
 }
 .btn-player {
   position: relative;
