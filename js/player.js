@@ -53,6 +53,10 @@ export class Player {
     this._sleepDeadline = null;
     this._sleepInterval = null;
 
+    // 画面遷移用コールバック（app.js から設定される）
+    this.onOpenEpisode = null;
+    this.onOpenShow = null;
+
     this._bindUi();
     this._bindAudio();
     this._bindMediaSession();
@@ -63,6 +67,14 @@ export class Player {
     this.el.rewind.addEventListener('click', () => this.seekBy(-SKIP_BACK));
     this.el.forward.addEventListener('click', () => this.seekBy(SKIP_FORWARD));
     this.el.sleep.addEventListener('click', () => this.toggleSleepTimer());
+
+    // タイトル部タップで画面遷移（エピソードタイトル→概要、番組名→エピソード一覧）
+    this.el.epTitle.addEventListener('click', () => {
+      if (this.current) this.onOpenEpisode?.(this.current.show, this.current.episode);
+    });
+    this.el.showTitle.addEventListener('click', () => {
+      if (this.current) this.onOpenShow?.(this.current.show);
+    });
 
     // 再生設定シートの開閉
     this.el.settings.addEventListener('click', () => {

@@ -433,11 +433,14 @@ html, body {
 .player-ep-title {
   font-size: 13px; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer;
 }
 .player-show-title {
   font-size: 11px; color: var(--text-dim);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer;
 }
+.player-ep-title:active, .player-show-title:active { opacity: 0.6; }
 .player-seek { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .player-time { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; min-width: 38px; }
 .player-time:last-child { text-align: right; }

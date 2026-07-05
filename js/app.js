@@ -530,6 +530,13 @@ onSyncApplied(() => {
 
 // ---------- 初期表示 ----------
 
+// プレイヤーバーのタイトルタップで画面遷移
+player.onOpenEpisode = (show, episode) => openEpisode(show, episode);
+player.onOpenShow = (show) => {
+  $('episode-panel').classList.add('hidden'); // エピソード詳細が開いていたら閉じて一覧を出す
+  openShow(show);
+};
+
 renderFavorites();
 renderSyncStatus();
 initSync();
