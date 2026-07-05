@@ -6,6 +6,7 @@ import {
   getGhToken, setGhToken, getLastSync,
   getAiResult, setAiResult, episodeKey,
   getPosition, hasPlayed, getShowSkip, setShowSkip,
+  getShowAutoAi, setShowAutoAi,
 } from './storage.js';
 import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
@@ -198,6 +199,10 @@ async function openShow(show) {
           <button class="stepper-btn" data-skip="outro" data-delta="5" aria-label="5秒増やす">＋</button>
         </div>
       </div>
+      <div class="skip-row">
+        <span class="skip-label">再生開始時に AI 分析を自動生成</span>
+        <button class="toggle" id="auto-ai-toggle" role="switch" aria-label="AI分析の自動生成"></button>
+      </div>
     </div>
     <h3 class="section-heading" id="episode-list-heading">エピソード（${feed.episodes.length}件）</h3>
     <div class="seg-tabs" id="episode-tabs">
@@ -299,11 +304,24 @@ async function openShow(show) {
     });
   });
 
+  // AI自動生成のON/OFF（デフォルトOFF）
+  const autoToggle = $('auto-ai-toggle');
+  autoToggle.classList.toggle('on', getShowAutoAi(show.id));
+  autoToggle.addEventListener('click', () => {
+    const next = !getShowAutoAi(show.id);
+    setShowAutoAi(show.id, next);
+    autoToggle.classList.toggle('on', next);
+    scheduleSync();
+  });
+
 }
 
 // ---------- エピソード詳細 ----------
 
+let shownEpisode = null; // エピソードパネルに表示中の {show, episode, key}
+
 function openEpisode(show, episode) {
+  shownEpisode = { show, episode, key: episodeKey(show.id, episode) };
   const panel = $('episode-panel');
   const body = $('episode-panel-body');
   panel.classList.remove('hidden');
@@ -329,6 +347,15 @@ function openEpisode(show, episode) {
 
 // ---------- AI 要約・クイズ ----------
 
+const aiInFlight = new Map(); // episodeKey -> 進行中ステータス文言
+
+// 表示中のエピソードが該当するなら AI セクションを描画し直す
+function refreshAiSectionIfShown(key) {
+  if (shownEpisode?.key === key && !$('episode-panel').classList.contains('hidden')) {
+    renderAiSection(shownEpisode.show, shownEpisode.episode);
+  }
+}
+
 function renderAiSection(show, episode) {
   const section = $('ai-section');
   const key = episodeKey(show.id, episode);
@@ -336,6 +363,17 @@ function renderAiSection(show, episode) {
 
   if (cached) {
     renderAiResult(section, show, episode, cached);
+    return;
+  }
+
+  // 生成中（手動・自動どちらでも）は進行状況を表示
+  if (aiInFlight.has(key)) {
+    section.innerHTML = `
+      <h3>AI 分析とクイズ</h3>
+      <div class="ai-status" id="ai-progress">
+        <span class="spinner"></span>${esc(aiInFlight.get(key))}
+      </div>
+    `;
     return;
   }
 
@@ -353,32 +391,53 @@ function renderAiSection(show, episode) {
   $('ai-generate-btn').addEventListener('click', () => runGenerate(show, episode));
 }
 
-async function runGenerate(show, episode) {
+// 生成の本体（手動・自動共通）。多重実行と生成済みをガードする
+async function startGeneration(show, episode) {
   const apiKey = getApiKey();
-  const statusEl = $('ai-status');
-  if (!apiKey) {
-    statusEl.innerHTML = `<div class="ai-error">Gemini API キーが未設定です。「設定」タブでキーを保存してください。</div>`;
-    return;
-  }
-  const btn = $('ai-generate-btn');
-  if (btn) btn.disabled = true;
+  const key = episodeKey(show.id, episode);
+  if (!apiKey || aiInFlight.has(key) || getAiResult(key)) return;
 
+  aiInFlight.set(key, '生成を開始しています…');
+  refreshAiSectionIfShown(key);
   try {
     const result = await generateStudyAid({
       apiKey, show, episode,
       onStatus: (msg) => {
-        statusEl.innerHTML = `<div class="ai-status"><span class="spinner"></span>${esc(msg)}</div>`;
+        aiInFlight.set(key, msg);
+        const progress = $('ai-progress');
+        if (progress && shownEpisode?.key === key) {
+          progress.innerHTML = `<span class="spinner"></span>${esc(msg)}`;
+        }
       },
     });
-    const key = episodeKey(show.id, episode);
     setAiResult(key, result);
-    renderAiResult($('ai-section'), show, episode, result);
+    aiInFlight.delete(key);
     scheduleSync();
+    refreshAiSectionIfShown(key);
   } catch (err) {
-    console.error(err);
-    if (btn) btn.disabled = false;
-    statusEl.innerHTML = `<div class="ai-error">生成に失敗しました。\n${esc(err.message)}</div>`;
+    console.error('AI生成に失敗:', err);
+    aiInFlight.delete(key);
+    refreshAiSectionIfShown(key); // ボタンUIに戻す
+    const statusEl = $('ai-status');
+    if (statusEl && shownEpisode?.key === key) {
+      statusEl.innerHTML = `<div class="ai-error">生成に失敗しました。\n${esc(err.message)}</div>`;
+    }
   }
+}
+
+// 生成ボタンから（キー未設定ならエラー表示）
+function runGenerate(show, episode) {
+  if (!getApiKey()) {
+    $('ai-status').innerHTML =
+      `<div class="ai-error">Gemini API キーが未設定です。「設定」タブでキーを保存してください。</div>`;
+    return;
+  }
+  startGeneration(show, episode);
+}
+
+// 再生開始時の自動生成（番組ごとの設定が ON の場合のみ）
+function maybeAutoGenerate(show, episode) {
+  if (getShowAutoAi(show.id)) startGeneration(show, episode);
 }
 
 function renderAiResult(section, show, episode, result) {
@@ -536,6 +595,7 @@ player.onOpenShow = (show) => {
   $('episode-panel').classList.add('hidden'); // エピソード詳細が開いていたら閉じて一覧を出す
   openShow(show);
 };
+player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 
 renderFavorites();
 renderSyncStatus();

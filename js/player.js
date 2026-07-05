@@ -53,9 +53,10 @@ export class Player {
     this._sleepDeadline = null;
     this._sleepInterval = null;
 
-    // 画面遷移用コールバック（app.js から設定される）
+    // 画面遷移・再生開始コールバック（app.js から設定される）
     this.onOpenEpisode = null;
     this.onOpenShow = null;
+    this.onPlayStarted = null;
 
     this._bindUi();
     this._bindAudio();
@@ -278,7 +279,10 @@ export class Player {
     }
 
     setNowPlaying({ show, episode });
-    if (play) this.audio.play().catch((e) => console.warn('play failed:', e));
+    if (play) {
+      this.audio.play().catch((e) => console.warn('play failed:', e));
+      this.onPlayStarted?.(show, episode);
+    }
   }
 
   playEpisode(show, episode) {
