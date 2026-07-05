@@ -13,6 +13,7 @@ import { generateStudyAid, testApiKey } from './gemini.js';
 import { Player } from './player.js';
 
 const player = new Player();
+window.__pp = { player }; // デバッグ・動作検証用
 
 const $ = (id) => document.getElementById(id);
 
@@ -177,9 +178,19 @@ async function openShow(show) {
     ${desc ? `
       <div class="show-desc desc-clamp" id="show-desc">${esc(desc)}</div>
       <button class="desc-toggle" id="desc-toggle">すべて表示</button>` : ''}
-    <h3 class="section-heading">エピソード（${feed.episodes.length}件）</h3>
-    <ul class="episode-list">
-      ${feed.episodes.map((ep, i) => `
+    <h3 class="section-heading" id="episode-list-heading">エピソード（${feed.episodes.length}件）</h3>
+    <input type="search" id="episode-search" class="episode-search"
+           placeholder="タイトル・概要で絞り込み" autocomplete="off">
+    <ul class="episode-list" id="episode-list"></ul>
+  `;
+
+  const epShow = { ...show, artwork: show.artwork || feed.artwork, title: feed.title || show.title };
+
+  function renderEpisodeList(list) {
+    $('episode-list-heading').textContent = `エピソード（${list.length}件）`;
+    const ul = $('episode-list');
+    ul.innerHTML = list.length
+      ? list.map((ep, i) => `
         <li class="episode-item" data-ep="${i}">
           <div class="episode-date">${esc(fmtDate(ep.pubDate))}</div>
           <div class="episode-title">${esc(ep.title)}</div>
@@ -188,9 +199,23 @@ async function openShow(show) {
             ${ep.transcripts.length ? '<span class="badge">文字起こしあり</span>' : ''}
             ${getAiResult(episodeKey(show.id, ep)) ? '<span class="badge">要約済み</span>' : ''}
           </div>
-        </li>`).join('')}
-    </ul>
-  `;
+        </li>`).join('')
+      : '<li class="empty-note">一致するエピソードがありません</li>';
+    ul.querySelectorAll('.episode-item').forEach((item) => {
+      item.addEventListener('click', () => openEpisode(epShow, list[Number(item.dataset.ep)]));
+    });
+  }
+
+  renderEpisodeList(feed.episodes);
+  $('episode-search').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    renderEpisodeList(
+      !q
+        ? feed.episodes
+        : feed.episodes.filter((ep) =>
+            (ep.title + ' ' + ep.description).toLowerCase().includes(q))
+    );
+  });
 
   $('show-fav-btn').addEventListener('click', (e) => {
     const added = toggleFavorite({ ...show, artwork: show.artwork || feed.artwork });
@@ -209,12 +234,6 @@ async function openShow(show) {
     });
   }
 
-  body.querySelectorAll('.episode-item').forEach((item) => {
-    item.addEventListener('click', () =>
-      openEpisode({ ...show, artwork: show.artwork || feed.artwork, title: feed.title || show.title },
-        feed.episodes[Number(item.dataset.ep)])
-    );
-  });
 }
 
 // ---------- エピソード詳細 ----------

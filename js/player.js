@@ -9,6 +9,7 @@ import { scheduleSync } from './sync.js';
 
 const SKIP_FORWARD = 15;
 const SKIP_BACK = 30;
+const SLEEP_MINUTES = 20;
 
 function fmtTime(sec) {
   if (!Number.isFinite(sec) || sec < 0) sec = 0;
@@ -43,7 +44,11 @@ export class Player {
       rewind: document.getElementById('btn-rewind'),
       forward: document.getElementById('btn-forward'),
       rate: document.getElementById('btn-rate'),
+      sleep: document.getElementById('btn-sleep'),
+      sleepLabel: document.getElementById('sleep-label'),
     };
+    this._sleepDeadline = null;
+    this._sleepInterval = null;
 
     this._bindUi();
     this._bindAudio();
@@ -55,6 +60,7 @@ export class Player {
     this.el.rewind.addEventListener('click', () => this.seekBy(-SKIP_BACK));
     this.el.forward.addEventListener('click', () => this.seekBy(SKIP_FORWARD));
     this.el.rate.addEventListener('click', () => this.cycleRate());
+    this.el.sleep.addEventListener('click', () => this.toggleSleepTimer());
     this.el.range.addEventListener('input', () => {
       this._seeking = true;
       this.el.current.textContent = fmtTime(Number(this.el.range.value));
@@ -74,6 +80,8 @@ export class Player {
     });
     a.addEventListener('play', () => this._applyRate());
     a.addEventListener('timeupdate', () => {
+      // 睡眠タイマー: バックグラウンドでも再生中は timeupdate が発火するのでここでも判定
+      this._checkSleepTimer();
       if (!this._seeking) {
         this.el.range.value = String(Math.floor(a.currentTime));
         this.el.current.textContent = fmtTime(a.currentTime);
@@ -133,6 +141,42 @@ export class Player {
     setShowRate(this.current.show.id, next);
     this._applyRate();
     scheduleSync();
+  }
+
+  // ---- 睡眠タイマー（20分で自動停止） ----
+
+  toggleSleepTimer() {
+    if (this._sleepDeadline) {
+      this._clearSleepTimer();
+      return;
+    }
+    this._sleepDeadline = Date.now() + SLEEP_MINUTES * 60 * 1000;
+    this.el.sleep.classList.add('active');
+    this._updateSleepLabel();
+    this._sleepInterval = setInterval(() => this._checkSleepTimer(), 10000);
+  }
+
+  _checkSleepTimer() {
+    if (!this._sleepDeadline) return;
+    if (Date.now() >= this._sleepDeadline) {
+      this.audio.pause();
+      this._clearSleepTimer();
+    } else {
+      this._updateSleepLabel();
+    }
+  }
+
+  _updateSleepLabel() {
+    const remainMin = Math.ceil((this._sleepDeadline - Date.now()) / 60000);
+    this.el.sleepLabel.textContent = remainMin + '分';
+  }
+
+  _clearSleepTimer() {
+    clearInterval(this._sleepInterval);
+    this._sleepInterval = null;
+    this._sleepDeadline = null;
+    this.el.sleep.classList.remove('active');
+    this.el.sleepLabel.textContent = SLEEP_MINUTES + '分';
   }
 
   // エピソードをプレイヤーバーにロードする（play=false ならリロード後の復元表示のみ）
