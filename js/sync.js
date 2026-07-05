@@ -97,6 +97,7 @@ function mergeStates(local, remote) {
     ai,
     pos: mergeByKey(local.pos, remote.pos),
     rate: mergeByKey(local.rate, remote.rate),
+    skip: mergeByKey(local.skip, remote.skip),
   };
 }
 

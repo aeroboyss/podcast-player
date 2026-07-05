@@ -5,7 +5,7 @@ import {
   getApiKey, setApiKey, getProxyUrl, setProxyUrl,
   getGhToken, setGhToken, getLastSync,
   getAiResult, setAiResult, episodeKey,
-  getPosition, hasPlayed,
+  getPosition, hasPlayed, getShowSkip, setShowSkip,
 } from './storage.js';
 import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
@@ -181,6 +181,24 @@ async function openShow(show) {
     ${desc ? `
       <div class="show-desc desc-clamp" id="show-desc">${esc(desc)}</div>
       <button class="desc-toggle" id="desc-toggle">すべて表示</button>` : ''}
+    <div class="skip-settings">
+      <div class="skip-row">
+        <span class="skip-label">冒頭をスキップ</span>
+        <div class="stepper">
+          <button class="stepper-btn" data-skip="intro" data-delta="-5" aria-label="5秒減らす">−</button>
+          <span class="stepper-val" id="skip-intro-val"></span>
+          <button class="stepper-btn" data-skip="intro" data-delta="5" aria-label="5秒増やす">＋</button>
+        </div>
+      </div>
+      <div class="skip-row">
+        <span class="skip-label">終わりの手前で終了</span>
+        <div class="stepper">
+          <button class="stepper-btn" data-skip="outro" data-delta="-5" aria-label="5秒減らす">−</button>
+          <span class="stepper-val" id="skip-outro-val"></span>
+          <button class="stepper-btn" data-skip="outro" data-delta="5" aria-label="5秒増やす">＋</button>
+        </div>
+      </div>
+    </div>
     <h3 class="section-heading" id="episode-list-heading">エピソード（${feed.episodes.length}件）</h3>
     <div class="seg-tabs" id="episode-tabs">
       <button class="seg-tab active" data-tab="all">All</button>
@@ -262,6 +280,24 @@ async function openShow(show) {
       toggle.textContent = clamped ? 'すべて表示' : '閉じる';
     });
   }
+
+  // 冒頭/終わりスキップの設定（5秒刻み）
+  function renderSkipVals() {
+    const s = getShowSkip(show.id);
+    $('skip-intro-val').textContent = s.intro + '秒';
+    $('skip-outro-val').textContent = s.outro + '秒';
+  }
+  renderSkipVals();
+  body.querySelectorAll('.stepper-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const s = getShowSkip(show.id);
+      const field = btn.dataset.skip;
+      s[field] = Math.min(600, Math.max(0, s[field] + Number(btn.dataset.delta)));
+      setShowSkip(show.id, s);
+      renderSkipVals();
+      scheduleSync();
+    });
+  });
 
 }
 

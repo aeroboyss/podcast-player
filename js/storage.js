@@ -13,6 +13,7 @@ const K = {
   ai: 'pp.ai.',      // + episodeKey
   pos: 'pp.pos.',    // + episodeKey
   rate: 'pp.rate.',  // + showId（番組ごとの再生速度）
+  skip: 'pp.skip.',  // + showId（番組ごとの冒頭/終わりスキップ秒数）
   feed: 'pp.feed.',  // + showId
 };
 
@@ -129,6 +130,7 @@ export function exportState() {
     ai: collectPrefixed(K.ai),
     pos: collectPrefixed(K.pos),
     rate: collectPrefixed(K.rate),
+    skip: collectPrefixed(K.skip),
   };
 }
 
@@ -142,6 +144,7 @@ export function applyState(state) {
   for (const [key, value] of Object.entries(state.ai)) setJSON(K.ai + key, value);
   for (const [key, value] of Object.entries(state.pos)) setJSON(K.pos + key, value);
   for (const [key, value] of Object.entries(state.rate || {})) setJSON(K.rate + key, value);
+  for (const [key, value] of Object.entries(state.skip || {})) setJSON(K.skip + key, value);
   localStorage.setItem(K.lastSync, String(Date.now()));
 }
 
@@ -194,6 +197,20 @@ export function getShowRate(showId) {
 
 export function setShowRate(showId, rate) {
   setJSON(K.rate + showId, { v: rate, at: Date.now() });
+}
+
+// ---- 番組ごとの冒頭/終わりスキップ ----
+// 値は { intro: 冒頭スキップ秒, outro: 終わり手前秒, at: 更新時刻 }
+const MAX_SKIP_SEC = 600;
+
+export function getShowSkip(showId) {
+  const raw = getJSON(K.skip + showId, null);
+  const clamp = (v) => Math.min(MAX_SKIP_SEC, Math.max(0, Math.round(Number(v) / 5) * 5 || 0));
+  return { intro: clamp(raw?.intro), outro: clamp(raw?.outro) };
+}
+
+export function setShowSkip(showId, { intro, outro }) {
+  setJSON(K.skip + showId, { intro, outro, at: Date.now() });
 }
 
 // ---- 再生中エピソード（リロード後の復元用） ----

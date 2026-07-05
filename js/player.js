@@ -3,7 +3,7 @@
 import {
   episodeKey, getPosition, setPosition,
   getShowRate, setShowRate, PLAYBACK_RATES,
-  getNowPlaying, setNowPlaying,
+  getShowSkip, getNowPlaying, setNowPlaying,
 } from './storage.js';
 import { scheduleSync } from './sync.js';
 
@@ -82,6 +82,7 @@ export class Player {
     a.addEventListener('timeupdate', () => {
       // 睡眠タイマー: バックグラウンドでも再生中は timeupdate が発火するのでここでも判定
       this._checkSleepTimer();
+      this._checkOutroSkip();
       if (!this._seeking) {
         this.el.range.value = String(Math.floor(a.currentTime));
         this.el.current.textContent = fmtTime(a.currentTime);
@@ -95,7 +96,8 @@ export class Player {
     a.addEventListener('play', () => this._setPlayingUi(true));
     a.addEventListener('pause', () => {
       this._setPlayingUi(false);
-      if (this.current) {
+      // outro 自動終了後は「聴き終わり(位置0)」の記録を上書きしない
+      if (this.current && !this._outroDone) {
         setPosition(this.current.key, a.currentTime);
         scheduleSync(); // 一時停止のタイミングで再生位置を他端末へ同期
       }
@@ -179,17 +181,36 @@ export class Player {
     this.el.sleepLabel.textContent = SLEEP_MINUTES + '分';
   }
 
+  // エピソードの終わり手前で自動終了（番組ごとの outro 設定）
+  _checkOutroSkip() {
+    if (!this.current || this._outroDone || this.audio.paused) return;
+    const { outro } = getShowSkip(this.current.show.id);
+    const d = this.audio.duration;
+    if (outro > 0 && Number.isFinite(d) && this.audio.currentTime >= d - outro) {
+      this._outroDone = true; // 再度再生ボタンを押せば最後まで聴ける
+      this.audio.pause();
+      this._setPlayingUi(false); // pause() が play() に割り込むと pause イベントが出ないため明示更新
+      setPosition(this.current.key, 0); // 聴き終わり扱いにする
+      setNowPlaying(null);
+      scheduleSync();
+    }
+  }
+
   // エピソードをプレイヤーバーにロードする（play=false ならリロード後の復元表示のみ）
   _load(show, episode, key, { play }) {
     this.current = { show, episode, key };
     this._lastSaved = 0;
+    this._outroDone = false;
     this.audio.src = episode.enclosureUrl;
 
+    // 再開位置があればそこから、なければ冒頭スキップ設定分を飛ばして開始
     const resumeAt = getPosition(key);
-    if (resumeAt > 5) {
+    const { intro } = getShowSkip(show.id);
+    const startAt = resumeAt > 5 ? resumeAt : intro;
+    if (startAt > 0) {
       this.audio.addEventListener(
         'loadedmetadata',
-        () => { this.audio.currentTime = resumeAt; },
+        () => { this.audio.currentTime = startAt; },
         { once: true }
       );
     }
@@ -198,8 +219,8 @@ export class Player {
     this.el.artwork.src = show.artwork || '';
     this.el.epTitle.textContent = episode.title;
     this.el.showTitle.textContent = show.title;
-    this.el.range.value = String(Math.floor(resumeAt));
-    this.el.current.textContent = fmtTime(resumeAt);
+    this.el.range.value = String(Math.floor(startAt));
+    this.el.current.textContent = fmtTime(startAt);
     this.el.duration.textContent = episode.durationSec ? fmtTime(episode.durationSec) : '--:--';
     this._applyRate();
 
