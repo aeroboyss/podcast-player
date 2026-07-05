@@ -9,8 +9,10 @@ const K = {
   favAt: 'pp.favAt',   // お気に入り最終更新時刻（同期のLWW判定用）
   setAt: 'pp.setAt',   // 設定最終更新時刻
   lastSync: 'pp.lastSync',
+  nowPlaying: 'pp.nowPlaying',
   ai: 'pp.ai.',      // + episodeKey
   pos: 'pp.pos.',    // + episodeKey
+  rate: 'pp.rate.',  // + showId（番組ごとの再生速度）
   feed: 'pp.feed.',  // + showId
 };
 
@@ -125,6 +127,7 @@ export function exportState() {
     },
     ai: collectPrefixed(K.ai),
     pos: collectPrefixed(K.pos),
+    rate: collectPrefixed(K.rate),
   };
 }
 
@@ -138,6 +141,7 @@ export function applyState(state) {
   localStorage.setItem(K.setAt, String(state.settings.at));
   for (const [key, value] of Object.entries(state.ai)) setJSON(K.ai + key, value);
   for (const [key, value] of Object.entries(state.pos)) setJSON(K.pos + key, value);
+  for (const [key, value] of Object.entries(state.rate || {})) setJSON(K.rate + key, value);
   localStorage.setItem(K.lastSync, String(Date.now()));
 }
 
@@ -171,6 +175,30 @@ export function setPosition(episodeKey, seconds) {
       JSON.stringify({ s: Math.floor(seconds), at: Date.now() })
     );
   } catch { /* 容量超過時は無視 */ }
+}
+
+// ---- 番組ごとの再生速度 ----
+// 値は { v: 倍率, at: 更新時刻 }（同期時にキー単位で新しい方を採用）
+export const PLAYBACK_RATES = [1, 1.1, 1.2];
+
+export function getShowRate(showId) {
+  const raw = getJSON(K.rate + showId, null);
+  const r = typeof raw === 'number' ? raw : Number(raw?.v);
+  return PLAYBACK_RATES.includes(r) ? r : 1;
+}
+
+export function setShowRate(showId, rate) {
+  setJSON(K.rate + showId, { v: rate, at: Date.now() });
+}
+
+// ---- 再生中エピソード（リロード後の復元用） ----
+export function getNowPlaying() {
+  return getJSON(K.nowPlaying, null);
+}
+
+export function setNowPlaying(np) {
+  if (np) setJSON(K.nowPlaying, np);
+  else localStorage.removeItem(K.nowPlaying);
 }
 
 // ---- フィードキャッシュ（30分） ----

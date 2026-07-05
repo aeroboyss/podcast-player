@@ -80,13 +80,22 @@ function mergeStates(local, remote) {
     if (!ai[key] || (value?.generatedAt || 0) >= (ai[key]?.generatedAt || 0)) ai[key] = value;
   }
 
-  const posAt = (v) => (typeof v === 'number' ? 0 : v?.at || 0);
-  const pos = { ...(remote.pos || {}) };
-  for (const [key, value] of Object.entries(local.pos)) {
-    if (!(key in pos) || posAt(value) >= posAt(pos[key])) pos[key] = value;
-  }
+  const entryAt = (v) => (typeof v === 'number' ? 0 : v?.at || 0);
+  const mergeByKey = (loc, rem) => {
+    const out = { ...(rem || {}) };
+    for (const [key, value] of Object.entries(loc || {})) {
+      if (!(key in out) || entryAt(value) >= entryAt(out[key])) out[key] = value;
+    }
+    return out;
+  };
 
-  return { favorites, settings, ai, pos };
+  return {
+    favorites,
+    settings,
+    ai,
+    pos: mergeByKey(local.pos, remote.pos),
+    rate: mergeByKey(local.rate, remote.rate),
+  };
 }
 
 export async function syncNow() {

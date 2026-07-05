@@ -1,6 +1,10 @@
 // <audio> 制御・Media Session・再生位置の保存/復元
 
-import { episodeKey, getPosition, setPosition } from './storage.js';
+import {
+  episodeKey, getPosition, setPosition,
+  getShowRate, setShowRate, PLAYBACK_RATES,
+  getNowPlaying, setNowPlaying,
+} from './storage.js';
 import { scheduleSync } from './sync.js';
 
 const SKIP_FORWARD = 15;
@@ -38,6 +42,7 @@ export class Player {
       iconPause: document.getElementById('icon-pause'),
       rewind: document.getElementById('btn-rewind'),
       forward: document.getElementById('btn-forward'),
+      rate: document.getElementById('btn-rate'),
     };
 
     this._bindUi();
@@ -49,6 +54,7 @@ export class Player {
     this.el.play.addEventListener('click', () => this.toggle());
     this.el.rewind.addEventListener('click', () => this.seekBy(-SKIP_BACK));
     this.el.forward.addEventListener('click', () => this.seekBy(SKIP_FORWARD));
+    this.el.rate.addEventListener('click', () => this.cycleRate());
     this.el.range.addEventListener('input', () => {
       this._seeking = true;
       this.el.current.textContent = fmtTime(Number(this.el.range.value));
@@ -64,7 +70,9 @@ export class Player {
     a.addEventListener('loadedmetadata', () => {
       this.el.range.max = String(Math.floor(a.duration) || 0);
       this.el.duration.textContent = fmtTime(a.duration);
+      this._applyRate(); // load() で playbackRate がリセットされるため再適用
     });
+    a.addEventListener('play', () => this._applyRate());
     a.addEventListener('timeupdate', () => {
       if (!this._seeking) {
         this.el.range.value = String(Math.floor(a.currentTime));
@@ -86,6 +94,7 @@ export class Player {
     });
     a.addEventListener('ended', () => {
       if (this.current) setPosition(this.current.key, 0);
+      setNowPlaying(null);
       this._setPlayingUi(false);
       scheduleSync();
     });
@@ -108,17 +117,26 @@ export class Player {
     this.el.iconPause.classList.toggle('hidden', !playing);
   }
 
-  playEpisode(show, episode) {
-    const key = episodeKey(show.id, episode);
+  // 番組ごとの再生速度を audio と表示に反映
+  _applyRate() {
+    if (!this.current) return;
+    const rate = getShowRate(this.current.show.id);
+    this.audio.playbackRate = rate;
+    this.audio.defaultPlaybackRate = rate;
+    this.el.rate.textContent = rate.toFixed(1) + 'x';
+  }
 
-    // 同じエピソードならトグルとして扱う
-    if (this.current?.key === key) {
-      this.toggle();
-      return;
-    }
+  cycleRate() {
+    if (!this.current) return;
+    const rate = getShowRate(this.current.show.id);
+    const next = PLAYBACK_RATES[(PLAYBACK_RATES.indexOf(rate) + 1) % PLAYBACK_RATES.length];
+    setShowRate(this.current.show.id, next);
+    this._applyRate();
+    scheduleSync();
+  }
 
-    if (this.current) setPosition(this.current.key, this.audio.currentTime);
-
+  // エピソードをプレイヤーバーにロードする（play=false ならリロード後の復元表示のみ）
+  _load(show, episode, key, { play }) {
     this.current = { show, episode, key };
     this._lastSaved = 0;
     this.audio.src = episode.enclosureUrl;
@@ -136,9 +154,10 @@ export class Player {
     this.el.artwork.src = show.artwork || '';
     this.el.epTitle.textContent = episode.title;
     this.el.showTitle.textContent = show.title;
-    this.el.range.value = '0';
+    this.el.range.value = String(Math.floor(resumeAt));
     this.el.current.textContent = fmtTime(resumeAt);
     this.el.duration.textContent = episode.durationSec ? fmtTime(episode.durationSec) : '--:--';
+    this._applyRate();
 
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -148,7 +167,28 @@ export class Player {
       });
     }
 
-    this.audio.play().catch((e) => console.warn('play failed:', e));
+    setNowPlaying({ show, episode });
+    if (play) this.audio.play().catch((e) => console.warn('play failed:', e));
+  }
+
+  playEpisode(show, episode) {
+    const key = episodeKey(show.id, episode);
+
+    // 同じエピソードならトグルとして扱う
+    if (this.current?.key === key) {
+      this.toggle();
+      return;
+    }
+
+    if (this.current) setPosition(this.current.key, this.audio.currentTime);
+    this._load(show, episode, key, { play: true });
+  }
+
+  // ページ読み込み時に前回の再生中エピソードを復元（再生はユーザー操作待ち）
+  restore() {
+    const np = getNowPlaying();
+    if (!np?.show || !np?.episode) return;
+    this._load(np.show, np.episode, episodeKey(np.show.id, np.episode), { play: false });
   }
 
   toggle() {

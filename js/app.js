@@ -442,3 +442,4 @@ onSyncApplied(() => {
 renderFavorites();
 renderSyncStatus();
 initSync();
+player.restore(); // 前回再生していたエピソードをプレイヤーバーに復元
