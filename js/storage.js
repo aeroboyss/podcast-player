@@ -116,13 +116,14 @@ function collectPrefixed(prefix) {
   return out;
 }
 
-// 同期用に全状態をエクスポート
+// 同期用に全状態をエクスポート。
+// Gemini API キーは同期しない（Gist はシークレットスキャンの対象になり得るため。
+// 実際にキーが「漏えい」と判定され無効化された事例あり）。各端末で個別に設定する。
 export function exportState() {
   return {
     favorites: { at: Number(localStorage.getItem(K.favAt)) || 0, items: getFavorites() },
     settings: {
       at: Number(localStorage.getItem(K.setAt)) || 0,
-      apiKey: getApiKey(),
       proxyUrl: getProxyUrl(),
     },
     ai: collectPrefixed(K.ai),
@@ -131,11 +132,10 @@ export function exportState() {
   };
 }
 
-// マージ済み状態を localStorage に書き戻す
+// マージ済み状態を localStorage に書き戻す（API キーはローカル管理のため触らない）
 export function applyState(state) {
   setJSON(K.favorites, state.favorites.items);
   localStorage.setItem(K.favAt, String(state.favorites.at));
-  localStorage.setItem(K.apiKey, state.settings.apiKey || '');
   if (state.settings.proxyUrl) localStorage.setItem(K.proxyUrl, state.settings.proxyUrl);
   else localStorage.removeItem(K.proxyUrl);
   localStorage.setItem(K.setAt, String(state.settings.at));

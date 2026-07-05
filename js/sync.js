@@ -73,7 +73,9 @@ function pickNewer(local, remote, isEmpty) {
 function mergeStates(local, remote) {
   if (!remote) return local;
   const favorites = pickNewer(local.favorites, remote.favorites, (f) => !f?.items?.length);
-  const settings = pickNewer(local.settings, remote.settings, (s) => !s?.apiKey && !s?.proxyUrl);
+  const settings = pickNewer(local.settings, remote.settings, (s) => !s?.proxyUrl);
+  // 旧バージョンの Gist に残っている API キーは取り込まず、次回 push で消す
+  if (settings.apiKey !== undefined) delete settings.apiKey;
 
   const ai = { ...(remote.ai || {}) };
   for (const [key, value] of Object.entries(local.ai)) {
