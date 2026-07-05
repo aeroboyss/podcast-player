@@ -59,6 +59,36 @@ icons/                アプリアイコン
 docs/design.md        設計書
 ```
 
+## 自前 CORS プロキシの設置（音声取得が 403 で失敗する場合）
+
+Spotify/Anchor 系など多くの音声ホストはブラウザからの直接取得（CORS）を許可しておらず、
+公開プロキシも大きい音声ファイルを拒否するため、「音声の取得に失敗しました (HTTP 403)」に
+なることがある。その場合は Cloudflare Workers（無料枠で十分）に `cf-proxy/` の
+プロキシを設置する。
+
+```sh
+cd cf-proxy
+npx wrangler login    # 初回のみ。ブラウザで Cloudflare にログイン（アカウントは無料で作成可）
+npx wrangler deploy
+```
+
+表示された URL（例 `https://podcast-proxy.xxx.workers.dev`）を使い、アプリの
+「設定」タブの「自前 CORS プロキシ URL」に次の形式で登録する：
+
+```
+https://podcast-proxy.xxx.workers.dev/?url=
+```
+
+第三者による無断利用を防ぎたい場合はトークン認証を有効にする：
+
+```sh
+npx wrangler secret put AUTH_TOKEN   # 任意の文字列を設定
+```
+
+その場合の登録 URL は `https://podcast-proxy.xxx.workers.dev/?token=<設定した値>&url=`。
+
+登録すると RSS・文字起こし・音声のすべての取得がこのプロキシを最優先で使うようになる。
+
 ## 制約
 
 - エピソード一覧は iTunes Lookup API（CORS 対応）から直接取得するため安定して動くが、

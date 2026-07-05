@@ -2,7 +2,7 @@
 
 import {
   getFavorites, isFavorite, toggleFavorite,
-  getApiKey, setApiKey,
+  getApiKey, setApiKey, getProxyUrl, setProxyUrl,
   getAiResult, setAiResult, episodeKey,
 } from './storage.js';
 import { searchPodcasts } from './itunes.js';
@@ -371,6 +371,14 @@ $('api-key-save').addEventListener('click', () => {
   setApiKey($('api-key-input').value);
   const status = $('api-key-status');
   status.textContent = '保存しました';
+  setTimeout(() => (status.textContent = ''), 2000);
+});
+
+$('proxy-url-input').value = getProxyUrl();
+$('proxy-url-save').addEventListener('click', () => {
+  setProxyUrl($('proxy-url-input').value);
+  const status = $('proxy-url-status');
+  status.textContent = getProxyUrl() ? '保存しました' : '削除しました';
   setTimeout(() => (status.textContent = ''), 2000);
 });
 

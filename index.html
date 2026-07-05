@@ -48,6 +48,18 @@
         <button id="api-key-save" class="btn btn-primary">保存</button>
         <span id="api-key-status" class="status-note"></span>
       </div>
+      <div class="settings-group" style="margin-top: 16px">
+        <label for="proxy-url-input" class="settings-label">自前 CORS プロキシ URL（任意）</label>
+        <p class="settings-desc">
+          音声の取得が「HTTP 403」等で失敗する番組は、音声ホストがブラウザからの取得を
+          許可していません。Cloudflare Workers（無料）に自前プロキシを置いて
+          その URL を登録すると解決します。設置手順はリポジトリの README を参照。
+          末尾が <code>?url=</code> の形式で入力してください。
+        </p>
+        <input type="url" id="proxy-url-input" placeholder="https://xxx.workers.dev/?url=" autocomplete="off">
+        <button id="proxy-url-save" class="btn btn-primary">保存</button>
+        <span id="proxy-url-status" class="status-note"></span>
+      </div>
     </section>
   </main>
 

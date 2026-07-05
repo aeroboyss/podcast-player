@@ -1,0 +1,9 @@
+name = "podcast-proxy"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# トークン認証を有効にする場合（推奨）:
+#   npx wrangler secret put AUTH_TOKEN
+# を実行して任意の文字列を設定し、アプリ側のプロキシURLを
+#   https://podcast-proxy.<subdomain>.workers.dev/?token=<値>&url=
+# の形式で登録する。

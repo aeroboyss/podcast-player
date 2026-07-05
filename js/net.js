@@ -1,11 +1,19 @@
 // CORS プロキシ付き fetch。
-// まず直接取得を試み、CORS 等で失敗したら公開プロキシへ順にフォールバックする。
+// まず直接取得を試み、CORS 等で失敗したらプロキシへ順にフォールバックする。
+// 設定画面で自前プロキシ（Cloudflare Workers 等）を登録すると最優先で使われる。
 
-const PROXIES = [
-  (u) => u, // 直接
-  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-];
+import { getProxyUrl } from './storage.js';
+
+function proxies() {
+  const list = [(u) => u]; // 直接
+  const custom = getProxyUrl();
+  if (custom) list.unshift((u) => custom + encodeURIComponent(u)); // 自前プロキシを最優先
+  list.push(
+    (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+    (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  );
+  return list;
+}
 
 async function tryFetch(url, init, timeoutMs) {
   const ctrl = new AbortController();
@@ -22,7 +30,7 @@ async function tryFetch(url, init, timeoutMs) {
 // テキスト（RSS XML・transcript など）を取得する
 export async function fetchTextViaProxy(url, { timeoutMs = 20000 } = {}) {
   let lastErr;
-  for (const wrap of PROXIES) {
+  for (const wrap of proxies()) {
     try {
       const res = await tryFetch(wrap(url), {}, timeoutMs);
       const text = await res.text();
@@ -38,7 +46,7 @@ export async function fetchTextViaProxy(url, { timeoutMs = 20000 } = {}) {
 // バイナリ（音声）を進捗付きで取得する
 export async function fetchBlobViaProxy(url, { onProgress, timeoutMs = 300000 } = {}) {
   let lastErr;
-  for (const wrap of PROXIES) {
+  for (const wrap of proxies()) {
     try {
       const res = await tryFetch(wrap(url), {}, timeoutMs);
       const total = Number(res.headers.get('content-length')) || 0;
@@ -64,5 +72,10 @@ export async function fetchBlobViaProxy(url, { onProgress, timeoutMs = 300000 } 
       lastErr = e;
     }
   }
-  throw new Error(`音声の取得に失敗しました\n(${lastErr?.message || lastErr})`);
+  const hint = getProxyUrl()
+    ? ''
+    : '\n\nこの番組の音声ホストはブラウザからの直接取得を許可していない可能性があります。' +
+      '「設定」タブで自前プロキシ（Cloudflare Workers・無料）を登録すると解決できます。' +
+      '手順はリポジトリの README を参照してください。';
+  throw new Error(`音声の取得に失敗しました\n(${lastErr?.message || lastErr})${hint}`);
 }

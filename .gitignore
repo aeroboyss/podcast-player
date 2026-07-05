@@ -1,1 +1,3 @@
 .DS_Store
+cf-proxy/.wrangler/
+cf-proxy/node_modules/

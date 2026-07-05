@@ -3,6 +3,7 @@
 const K = {
   favorites: 'pp.favorites',
   apiKey: 'pp.apiKey',
+  proxyUrl: 'pp.proxyUrl',
   ai: 'pp.ai.',      // + episodeKey
   pos: 'pp.pos.',    // + episodeKey
   feed: 'pp.feed.',  // + showId
@@ -55,6 +56,19 @@ export function getApiKey() {
 
 export function setApiKey(key) {
   localStorage.setItem(K.apiKey, key.trim());
+}
+
+// ---- 自前 CORS プロキシ ----
+// 値は「この後ろに encodeURIComponent した対象 URL を連結する」プレフィックス。
+// 例: https://podcast-proxy.example.workers.dev/?url=
+export function getProxyUrl() {
+  return localStorage.getItem(K.proxyUrl) || '';
+}
+
+export function setProxyUrl(url) {
+  const v = url.trim();
+  if (v) localStorage.setItem(K.proxyUrl, v);
+  else localStorage.removeItem(K.proxyUrl);
 }
 
 // ---- AI 生成結果（要約・クイズ） ----
