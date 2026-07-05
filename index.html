@@ -110,18 +110,20 @@
       <span id="player-duration" class="player-time">0:00</span>
     </div>
     <div class="player-controls">
-      <button id="btn-rewind" class="btn-player" aria-label="30秒巻き戻し">
-        <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/></svg>
-        <span class="btn-player-label">30</span>
-      </button>
-      <button id="btn-play" class="btn-player btn-play" aria-label="再生/停止">
-        <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <svg id="icon-pause" viewBox="0 0 24 24" class="hidden"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
-      </button>
-      <button id="btn-forward" class="btn-player" aria-label="15秒スキップ">
-        <svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6h2c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8z"/></svg>
-        <span class="btn-player-label">15</span>
-      </button>
+      <div class="player-transport">
+        <button id="btn-rewind" class="btn-player" aria-label="30秒巻き戻し">
+          <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/></svg>
+          <span class="btn-player-label">30</span>
+        </button>
+        <button id="btn-play" class="btn-player btn-play" aria-label="再生/停止">
+          <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="icon-pause" viewBox="0 0 24 24" class="hidden"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+        </button>
+        <button id="btn-forward" class="btn-player" aria-label="15秒スキップ">
+          <svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6h2c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8z"/></svg>
+          <span class="btn-player-label">15</span>
+        </button>
+      </div>
       <button id="btn-rate" class="btn-rate" aria-label="再生速度">1.0x</button>
     </div>
   </div>
