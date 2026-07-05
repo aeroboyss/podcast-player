@@ -65,14 +65,17 @@ function renderFavorites() {
   list.innerHTML = favs
     .map(
       (f, i) => `
-      <div class="show-tile" data-index="${i}">
+      <div class="show-row" data-index="${i}">
         <img src="${esc(f.artwork)}" alt="" loading="lazy">
-        <div class="show-tile-title">${esc(f.title)}</div>
+        <div class="show-row-meta">
+          <div class="show-row-title">${esc(f.title)}</div>
+          ${f.author ? `<div class="show-row-author">${esc(f.author)}</div>` : ''}
+        </div>
       </div>`
     )
     .join('');
-  list.querySelectorAll('.show-tile').forEach((tile) => {
-    tile.addEventListener('click', () => openShow(favs[Number(tile.dataset.index)]));
+  list.querySelectorAll('.show-row').forEach((row) => {
+    row.addEventListener('click', () => openShow(favs[Number(row.dataset.index)]));
   });
 }
 

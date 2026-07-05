@@ -63,29 +63,44 @@ html, body {
 .btn:disabled { opacity: 0.5; }
 .btn-block { display: block; width: 100%; padding: 14px; margin-top: 12px; }
 
-/* ---------- favorites grid ---------- */
-.show-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: 14px;
+/* ---------- favorites list ---------- */
+.show-list {
+  display: flex;
+  flex-direction: column;
 }
-.show-tile { cursor: pointer; }
-.show-tile img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 14px;
+.show-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.show-row img {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
   object-fit: cover;
   background: var(--card);
-  display: block;
+  flex-shrink: 0;
 }
-.show-tile .show-tile-title {
-  font-size: 12px;
+.show-row-meta { min-width: 0; flex: 1; }
+.show-row-title {
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
-  margin-top: 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.show-row-author {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- search ---------- */
