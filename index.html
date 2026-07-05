@@ -60,6 +60,20 @@
         <button id="proxy-url-save" class="btn btn-primary">保存</button>
         <span id="proxy-url-status" class="status-note"></span>
       </div>
+      <div class="settings-group" style="margin-top: 16px">
+        <label for="gh-token-input" class="settings-label">端末間の同期（GitHub）</label>
+        <p class="settings-desc">
+          お気に入り・設定・要約/クイズ・再生位置を、あなたの GitHub アカウントの
+          非公開 Gist 経由で Mac / iPhone 間で同期します。
+          <a href="https://github.com/settings/tokens/new?scopes=gist&description=podcast-player-sync"
+             target="_blank" rel="noopener">gist スコープのトークンを作成</a>して、
+          同じトークンを各端末に貼り付けてください。トークンはこの端末にのみ保存されます。
+        </p>
+        <input type="password" id="gh-token-input" placeholder="ghp_..." autocomplete="off">
+        <button id="gh-token-save" class="btn btn-primary">保存して同期</button>
+        <button id="sync-now-btn" class="btn btn-sub">今すぐ同期</button>
+        <div id="sync-status" class="status-note"></div>
+      </div>
     </section>
   </main>
 

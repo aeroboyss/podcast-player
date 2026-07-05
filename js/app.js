@@ -3,8 +3,10 @@
 import {
   getFavorites, isFavorite, toggleFavorite,
   getApiKey, setApiKey, getProxyUrl, setProxyUrl,
+  getGhToken, setGhToken, getLastSync,
   getAiResult, setAiResult, episodeKey,
 } from './storage.js';
+import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
 import { loadShowData } from './episodes.js';
 import { generateStudyAid } from './gemini.js';
@@ -127,6 +129,7 @@ function renderSearchResults(shows) {
       btn.classList.toggle('registered', added);
       btn.textContent = added ? '登録済み' : '登録';
       renderFavorites();
+      scheduleSync();
     });
   });
 }
@@ -194,6 +197,7 @@ async function openShow(show) {
     e.target.classList.toggle('registered', added);
     e.target.textContent = added ? '登録済み' : '登録';
     renderFavorites();
+    scheduleSync();
   });
 
   const toggle = $('desc-toggle');
@@ -285,6 +289,7 @@ async function runGenerate(show, episode) {
     const key = episodeKey(show.id, episode);
     setAiResult(key, result);
     renderAiResult($('ai-section'), show, episode, result);
+    scheduleSync();
   } catch (err) {
     console.error(err);
     if (btn) btn.disabled = false;
@@ -372,6 +377,7 @@ $('api-key-save').addEventListener('click', () => {
   const status = $('api-key-status');
   status.textContent = '保存しました';
   setTimeout(() => (status.textContent = ''), 2000);
+  scheduleSync();
 });
 
 $('proxy-url-input').value = getProxyUrl();
@@ -380,8 +386,47 @@ $('proxy-url-save').addEventListener('click', () => {
   const status = $('proxy-url-status');
   status.textContent = getProxyUrl() ? '保存しました' : '削除しました';
   setTimeout(() => (status.textContent = ''), 2000);
+  scheduleSync();
+});
+
+// ---------- 同期 ----------
+
+function renderSyncStatus(result) {
+  const el = $('sync-status');
+  if (result?.status === 'ok') {
+    el.textContent = '同期しました（' + new Date(result.at).toLocaleTimeString() + '）';
+  } else if (result?.status === 'error') {
+    el.textContent = '同期エラー: ' + result.message;
+  } else if (result?.status === 'no-token') {
+    el.textContent = 'トークンが未設定です';
+  } else if (getGhToken()) {
+    const last = getLastSync();
+    el.textContent = last ? '最終同期: ' + new Date(last).toLocaleString() : '';
+  }
+}
+
+async function runSync() {
+  $('sync-status').innerHTML = '<span class="spinner"></span>同期中…';
+  renderSyncStatus(await syncNow());
+}
+
+$('gh-token-input').value = getGhToken();
+$('gh-token-save').addEventListener('click', () => {
+  setGhToken($('gh-token-input').value);
+  if (getGhToken()) runSync();
+  else $('sync-status').textContent = 'トークンを削除しました';
+});
+$('sync-now-btn').addEventListener('click', runSync);
+
+onSyncApplied(() => {
+  renderFavorites();
+  $('api-key-input').value = getApiKey();
+  $('proxy-url-input').value = getProxyUrl();
+  renderSyncStatus({ status: 'ok', at: Date.now() });
 });
 
 // ---------- 初期表示 ----------
 
 renderFavorites();
+renderSyncStatus();
+initSync();

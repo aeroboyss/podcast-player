@@ -53,11 +53,28 @@ js/itunes.js          番組検索・エピソード一覧（iTunes Search / Loo
 js/episodes.js        エピソード読み込み戦略（Lookup 主経路＋RSS 補強）
 js/gemini.js          要約・クイズ生成（transcript / 音声の両経路）
 js/net.js             CORS プロキシ付き fetch
-js/storage.js         localStorage ラッパー
+js/sync.js            端末間同期（GitHub Gist・LWWマージ）
+js/storage.js         localStorage ラッパー・同期用の状態エクスポート/適用
 manifest.webmanifest  PWA マニフェスト
 icons/                アプリアイコン
 docs/design.md        設計書
 ```
+
+## 複数端末での同期（Mac / iPhone）
+
+お気に入り・設定（Gemini キー、プロキシ URL）・生成済み要約/クイズ・再生位置を、
+自分の GitHub アカウントの**非公開 Gist** 経由で端末間同期できる。
+
+1. [gist スコープのトークンを作成](https://github.com/settings/tokens/new?scopes=gist&description=podcast-player-sync)
+   （スコープは gist のみでよい）
+2. 各端末の「設定」タブ →「端末間の同期（GitHub）」に同じトークンを貼って「保存して同期」
+
+同期は起動時・変更時（数秒後にまとめて）・アプリのフォアグラウンド復帰時・
+再生の一時停止時に自動実行される。「今すぐ同期」で手動実行も可能。
+競合時はセクション単位で新しい方が優先され、要約/クイズと再生位置はキー単位でマージされる。
+
+注意: Gemini API キーも Gist（非公開）に含まれる。Gist の URL を知る人は閲覧できるため、
+気になる場合はキーの同期をやめて各端末で個別に設定し直すこと。
 
 ## 自前 CORS プロキシの設置（音声取得が 403 で失敗する場合）
 

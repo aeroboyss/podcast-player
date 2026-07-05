@@ -4,6 +4,11 @@ const K = {
   favorites: 'pp.favorites',
   apiKey: 'pp.apiKey',
   proxyUrl: 'pp.proxyUrl',
+  ghToken: 'pp.ghToken',
+  gistId: 'pp.gistId',
+  favAt: 'pp.favAt',   // お気に入り最終更新時刻（同期のLWW判定用）
+  setAt: 'pp.setAt',   // 設定最終更新時刻
+  lastSync: 'pp.lastSync',
   ai: 'pp.ai.',      // + episodeKey
   pos: 'pp.pos.',    // + episodeKey
   feed: 'pp.feed.',  // + showId
@@ -46,6 +51,7 @@ export function toggleFavorite(show) {
     favs.push(show);
   }
   setJSON(K.favorites, favs);
+  localStorage.setItem(K.favAt, String(Date.now()));
   return idx < 0; // true = 登録した
 }
 
@@ -56,6 +62,7 @@ export function getApiKey() {
 
 export function setApiKey(key) {
   localStorage.setItem(K.apiKey, key.trim());
+  localStorage.setItem(K.setAt, String(Date.now()));
 }
 
 // ---- 自前 CORS プロキシ ----
@@ -69,6 +76,69 @@ export function setProxyUrl(url) {
   const v = url.trim();
   if (v) localStorage.setItem(K.proxyUrl, v);
   else localStorage.removeItem(K.proxyUrl);
+  localStorage.setItem(K.setAt, String(Date.now()));
+}
+
+// ---- 端末間同期（GitHub Gist）用 ----
+export function getGhToken() {
+  return localStorage.getItem(K.ghToken) || '';
+}
+
+export function setGhToken(token) {
+  const v = token.trim();
+  if (v) localStorage.setItem(K.ghToken, v);
+  else localStorage.removeItem(K.ghToken);
+}
+
+export function getGistId() {
+  return localStorage.getItem(K.gistId) || '';
+}
+
+export function setGistId(id) {
+  localStorage.setItem(K.gistId, id);
+}
+
+export function getLastSync() {
+  return Number(localStorage.getItem(K.lastSync)) || 0;
+}
+
+function collectPrefixed(prefix) {
+  const out = {};
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith(prefix)) {
+      try {
+        out[key.slice(prefix.length)] = JSON.parse(localStorage.getItem(key));
+      } catch { /* 壊れたエントリは同期対象から除外 */ }
+    }
+  }
+  return out;
+}
+
+// 同期用に全状態をエクスポート
+export function exportState() {
+  return {
+    favorites: { at: Number(localStorage.getItem(K.favAt)) || 0, items: getFavorites() },
+    settings: {
+      at: Number(localStorage.getItem(K.setAt)) || 0,
+      apiKey: getApiKey(),
+      proxyUrl: getProxyUrl(),
+    },
+    ai: collectPrefixed(K.ai),
+    pos: collectPrefixed(K.pos),
+  };
+}
+
+// マージ済み状態を localStorage に書き戻す
+export function applyState(state) {
+  setJSON(K.favorites, state.favorites.items);
+  localStorage.setItem(K.favAt, String(state.favorites.at));
+  localStorage.setItem(K.apiKey, state.settings.apiKey || '');
+  if (state.settings.proxyUrl) localStorage.setItem(K.proxyUrl, state.settings.proxyUrl);
+  else localStorage.removeItem(K.proxyUrl);
+  localStorage.setItem(K.setAt, String(state.settings.at));
+  for (const [key, value] of Object.entries(state.ai)) setJSON(K.ai + key, value);
+  for (const [key, value] of Object.entries(state.pos)) setJSON(K.pos + key, value);
+  localStorage.setItem(K.lastSync, String(Date.now()));
 }
 
 // ---- AI 生成結果（要約・クイズ） ----
@@ -81,14 +151,25 @@ export function setAiResult(episodeKey, result) {
 }
 
 // ---- 再生位置 ----
+// 値は { s: 秒, at: 更新時刻 }（同期時にキー単位で新しい方を採用するため）
 export function getPosition(episodeKey) {
-  const v = Number(localStorage.getItem(K.pos + episodeKey));
-  return Number.isFinite(v) && v > 0 ? v : 0;
+  const raw = localStorage.getItem(K.pos + episodeKey);
+  if (!raw) return 0;
+  try {
+    const v = JSON.parse(raw);
+    const s = typeof v === 'number' ? v : Number(v?.s);
+    return Number.isFinite(s) && s > 0 ? s : 0;
+  } catch {
+    return 0;
+  }
 }
 
 export function setPosition(episodeKey, seconds) {
   try {
-    localStorage.setItem(K.pos + episodeKey, String(Math.floor(seconds)));
+    localStorage.setItem(
+      K.pos + episodeKey,
+      JSON.stringify({ s: Math.floor(seconds), at: Date.now() })
+    );
   } catch { /* 容量超過時は無視 */ }
 }
 

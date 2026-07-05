@@ -1,6 +1,7 @@
 // <audio> 制御・Media Session・再生位置の保存/復元
 
 import { episodeKey, getPosition, setPosition } from './storage.js';
+import { scheduleSync } from './sync.js';
 
 const SKIP_FORWARD = 15;
 const SKIP_BACK = 30;
@@ -76,10 +77,17 @@ export class Player {
       }
     });
     a.addEventListener('play', () => this._setPlayingUi(true));
-    a.addEventListener('pause', () => this._setPlayingUi(false));
+    a.addEventListener('pause', () => {
+      this._setPlayingUi(false);
+      if (this.current) {
+        setPosition(this.current.key, a.currentTime);
+        scheduleSync(); // 一時停止のタイミングで再生位置を他端末へ同期
+      }
+    });
     a.addEventListener('ended', () => {
       if (this.current) setPosition(this.current.key, 0);
       this._setPlayingUi(false);
+      scheduleSync();
     });
     a.addEventListener('error', () => {
       this.el.epTitle.textContent = '再生エラー: ' + (this.current?.episode.title || '');
