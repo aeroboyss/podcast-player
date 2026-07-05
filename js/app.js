@@ -9,7 +9,7 @@ import {
 import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
 import { loadShowData } from './episodes.js';
-import { generateStudyAid } from './gemini.js';
+import { generateStudyAid, testApiKey } from './gemini.js';
 import { Player } from './player.js';
 
 const player = new Player();
@@ -378,6 +378,18 @@ $('api-key-save').addEventListener('click', () => {
   status.textContent = '保存しました';
   setTimeout(() => (status.textContent = ''), 2000);
   scheduleSync();
+});
+
+$('api-key-test').addEventListener('click', async () => {
+  const status = $('api-key-status');
+  const key = $('api-key-input').value.trim() || getApiKey();
+  if (!key) {
+    status.textContent = 'キーが未入力です';
+    return;
+  }
+  status.innerHTML = '<span class="spinner"></span>確認中…';
+  const result = await testApiKey(key);
+  status.textContent = result.ok ? '✓ キーは有効です' : '✗ ' + result.message.replace(/\n/g, ' ');
 });
 
 $('proxy-url-input').value = getProxyUrl();

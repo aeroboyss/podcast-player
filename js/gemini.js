@@ -57,12 +57,38 @@ function buildInstruction(show, episode) {
   ].join('\n');
 }
 
+// Google API のエラーレスポンスから原因が分かるメッセージを組み立てる
+async function describeGoogleError(res, prefix) {
+  const body = await res.text().catch(() => '');
+  let msg = `${prefix} (HTTP ${res.status})`;
+  try {
+    const err = JSON.parse(body).error;
+    msg += `\n${err.status || ''}: ${err.message || ''}`;
+  } catch {
+    if (body) msg += '\n' + body.slice(0, 200);
+  }
+  return msg;
+}
+
+// 設定画面の「キーをテスト」用。安価な models 一覧でキーの有効性を確認する
+export async function testApiKey(apiKey) {
+  try {
+    const res = await fetch(`${API_BASE}/v1beta/models?pageSize=1`, {
+      headers: { 'x-goog-api-key': apiKey },
+    });
+    if (!res.ok) return { ok: false, message: await describeGoogleError(res, 'キーが拒否されました') };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: '接続エラー: ' + e.message };
+  }
+}
+
 async function callGenerate(apiKey, parts) {
   const res = await fetch(
-    `${API_BASE}/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    `${API_BASE}/v1beta/models/${MODEL}:generateContent`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         contents: [{ role: 'user', parts }],
         generationConfig: {
@@ -74,12 +100,7 @@ async function callGenerate(apiKey, parts) {
     }
   );
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    let msg = `Gemini API エラー (HTTP ${res.status})`;
-    try {
-      msg += ': ' + JSON.parse(body).error.message;
-    } catch { /* 本文がJSONでなければステータスのみ */ }
-    throw new Error(msg);
+    throw new Error(await describeGoogleError(res, 'Gemini API エラー'));
   }
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
@@ -96,9 +117,10 @@ async function callGenerate(apiKey, parts) {
 // ---- Files API（resumable upload） ----
 
 async function uploadAudioFile(apiKey, blob, mimeType, onStatus) {
-  const startRes = await fetch(`${API_BASE}/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`, {
+  const startRes = await fetch(`${API_BASE}/upload/v1beta/files`, {
     method: 'POST',
     headers: {
+      'x-goog-api-key': apiKey,
       'X-Goog-Upload-Protocol': 'resumable',
       'X-Goog-Upload-Command': 'start',
       'X-Goog-Upload-Header-Content-Length': String(blob.size),
@@ -107,7 +129,7 @@ async function uploadAudioFile(apiKey, blob, mimeType, onStatus) {
     },
     body: JSON.stringify({ file: { display_name: 'podcast-episode' } }),
   });
-  if (!startRes.ok) throw new Error(`アップロード開始に失敗 (HTTP ${startRes.status})`);
+  if (!startRes.ok) throw new Error(await describeGoogleError(startRes, 'アップロード開始に失敗'));
   const uploadUrl = startRes.headers.get('x-goog-upload-url');
   if (!uploadUrl) throw new Error('アップロード URL を取得できませんでした');
 
@@ -115,12 +137,13 @@ async function uploadAudioFile(apiKey, blob, mimeType, onStatus) {
   const upRes = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
+      'x-goog-api-key': apiKey,
       'X-Goog-Upload-Command': 'upload, finalize',
       'X-Goog-Upload-Offset': '0',
     },
     body: blob,
   });
-  if (!upRes.ok) throw new Error(`アップロードに失敗 (HTTP ${upRes.status})`);
+  if (!upRes.ok) throw new Error(await describeGoogleError(upRes, 'アップロードに失敗'));
   let file = (await upRes.json()).file;
 
   // 処理完了 (ACTIVE) まで待つ
@@ -129,8 +152,10 @@ async function uploadAudioFile(apiKey, blob, mimeType, onStatus) {
     if (Date.now() > deadline) throw new Error('音声の処理がタイムアウトしました');
     onStatus?.('Gemini 側で音声を処理中…');
     await new Promise((r) => setTimeout(r, 4000));
-    const poll = await fetch(`${API_BASE}/v1beta/${file.name}?key=${encodeURIComponent(apiKey)}`);
-    if (!poll.ok) throw new Error(`ファイル状態の確認に失敗 (HTTP ${poll.status})`);
+    const poll = await fetch(`${API_BASE}/v1beta/${file.name}`, {
+      headers: { 'x-goog-api-key': apiKey },
+    });
+    if (!poll.ok) throw new Error(await describeGoogleError(poll, 'ファイル状態の確認に失敗'));
     file = await poll.json();
   }
   if (file.state !== 'ACTIVE') {
