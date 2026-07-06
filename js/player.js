@@ -298,24 +298,32 @@ export class Player {
   playEpisodeAt(show, episode, sec) {
     const key = episodeKey(show.id, episode);
     if (this.current?.key === key) {
-      if (this.audio.readyState > 0) {
-        this.audio.currentTime = sec;
-      } else {
-        this.audio.addEventListener(
-          'loadedmetadata',
-          () => { this.audio.currentTime = sec; },
-          { once: true }
-        );
-      }
-      if (this.audio.paused) this.audio.play().catch((e) => console.warn('play failed:', e));
+      this._seekAndPlay(sec); // 読み込み済み: シーク完了後に再生
       return;
     }
     if (this.current) setPosition(this.current.key, this.audio.currentTime);
-    this._load(show, episode, key, { play: true, startAt: sec });
+    this._load(show, episode, key, { play: true, startAt: sec, seekBeforePlay: true });
+  }
+
+  // 読み込み済みエピソードを指定秒へシークしてから再生する。
+  // 旧位置の音が鳴らないよう、いったん停止 → シーク完了(seeked)後に再生する。
+  _seekAndPlay(sec) {
+    const a = this.audio;
+    const seekThenPlay = () => {
+      a.pause();
+      const onSeeked = () => {
+        a.removeEventListener('seeked', onSeeked);
+        a.play().catch((e) => console.warn('play failed:', e));
+      };
+      a.addEventListener('seeked', onSeeked);
+      a.currentTime = sec;
+    };
+    if (a.readyState >= 1) seekThenPlay();
+    else a.addEventListener('loadedmetadata', seekThenPlay, { once: true });
   }
 
   // エピソードをプレイヤーバーにロードする（play=false ならリロード後の復元表示のみ）
-  _load(show, episode, key, { play, startAt: startAtOverride }) {
+  _load(show, episode, key, { play, startAt: startAtOverride, seekBeforePlay = false }) {
     this.current = { show, episode, key };
     this._lastSaved = 0;
     this._outroDone = false;
@@ -325,7 +333,21 @@ export class Player {
     const resumeAt = getPosition(key);
     const { intro } = getShowSkip(show.id);
     const startAt = startAtOverride ?? (resumeAt > 5 ? resumeAt : intro);
-    if (startAt > 0) {
+
+    const startPlayback = () => {
+      this.audio.play().catch((e) => console.warn('play failed:', e));
+      this.onPlayStarted?.(show, episode);
+    };
+
+    if (startAt > 0 && seekBeforePlay && play) {
+      // タイムスタンプ指定: メタ読込 → シーク → シーク完了後に再生（冒頭が鳴らない）
+      this.audio.addEventListener('loadedmetadata', () => {
+        const onSeeked = () => { this.audio.removeEventListener('seeked', onSeeked); startPlayback(); };
+        this.audio.addEventListener('seeked', onSeeked);
+        this.audio.currentTime = startAt;
+      }, { once: true });
+    } else if (startAt > 0) {
+      // 通常再生・復元: loadedmetadata でシーク（再生は下で即時に開始しiOSのロック解除を満たす）
       this.audio.addEventListener(
         'loadedmetadata',
         () => { this.audio.currentTime = startAt; },
@@ -358,9 +380,9 @@ export class Player {
     }
 
     setNowPlaying({ show, episode });
-    if (play) {
-      this.audio.play().catch((e) => console.warn('play failed:', e));
-      this.onPlayStarted?.(show, episode);
+    // seekBeforePlay で startAt>0 のときは上のシーク完了後に再生するのでここでは呼ばない
+    if (play && !(startAt > 0 && seekBeforePlay)) {
+      startPlayback();
     }
   }
 
