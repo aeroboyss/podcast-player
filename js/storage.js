@@ -65,8 +65,9 @@ export function getApiKey() {
 }
 
 export function setApiKey(key) {
+  // API キーは同期対象外。同期用タイムスタンプ setAt は proxyUrl 専用なので
+  // ここでは更新しない（更新すると他端末の proxyUrl を誤って消してしまう）。
   localStorage.setItem(K.apiKey, key.trim());
-  localStorage.setItem(K.setAt, String(Date.now()));
 }
 
 // ---- 自前 CORS プロキシ ----
@@ -140,8 +141,8 @@ export function exportState() {
 export function applyState(state) {
   setJSON(K.favorites, state.favorites.items);
   localStorage.setItem(K.favAt, String(state.favorites.at));
+  // proxyUrl は同期では削除しない。非空の値のみ反映（データ損失防止）。
   if (state.settings.proxyUrl) localStorage.setItem(K.proxyUrl, state.settings.proxyUrl);
-  else localStorage.removeItem(K.proxyUrl);
   localStorage.setItem(K.setAt, String(state.settings.at));
   for (const [key, value] of Object.entries(state.ai)) setJSON(K.ai + key, value);
   for (const [key, value] of Object.entries(state.pos)) setJSON(K.pos + key, value);

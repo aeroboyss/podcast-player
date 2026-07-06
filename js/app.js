@@ -678,6 +678,17 @@ function goBack() {
 
 // ---------- 初期表示 ----------
 
+// localStorage の自動削除（iOS Safari の 7 日 ITP 等）を防ぐため永続化を要求。
+// 「ホーム画面に追加」した状態だと許可されやすい。許可されなければ設定画面で注意を促す。
+if (navigator.storage?.persist) {
+  navigator.storage.persisted()
+    .then((already) => already ? true : navigator.storage.persist())
+    .then((granted) => {
+      if (!granted) $('persist-note').classList.remove('hidden');
+    })
+    .catch(() => {});
+}
+
 renderFavorites();
 renderSyncStatus();
 initSync();

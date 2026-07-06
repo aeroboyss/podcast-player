@@ -73,9 +73,12 @@ function pickNewer(local, remote, isEmpty) {
 function mergeStates(local, remote) {
   if (!remote) return local;
   const favorites = pickNewer(local.favorites, remote.favorites, (f) => !f?.items?.length);
-  const settings = pickNewer(local.settings, remote.settings, (s) => !s?.proxyUrl);
-  // 旧バージョンの Gist に残っている API キーは取り込まず、次回 push で消す
-  if (settings.apiKey !== undefined) delete settings.apiKey;
+  // proxyUrl は「削除」を同期で伝播させない（データ損失防止）。
+  // ローカルにあればそれを、なければリモートの非空値を採用。消したい時は各端末で消す。
+  const settings = {
+    at: Math.max(local.settings?.at || 0, remote.settings?.at || 0),
+    proxyUrl: local.settings?.proxyUrl || remote.settings?.proxyUrl || '',
+  };
 
   const ai = { ...(remote.ai || {}) };
   for (const [key, value] of Object.entries(local.ai)) {
