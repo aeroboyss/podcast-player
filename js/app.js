@@ -44,6 +44,9 @@ document.querySelectorAll('.tab').forEach((tab) => {
     const name = tab.dataset.view;
     Object.entries(views).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
     if (name === 'home') renderFavorites();
+    // 検索タブは入力欄にフォーカスしてキーボードを開く
+    // （iOS はユーザー操作イベント内でのみ programmatic focus を許可する）
+    if (name === 'search') $('search-input').focus();
   });
 });
 
