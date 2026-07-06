@@ -198,6 +198,13 @@ async function openShow(show) {
         <span class="skip-label">再生開始時に AI 分析を自動生成</span>
         <button class="toggle" id="auto-ai-toggle" role="switch" aria-label="AI分析の自動生成"></button>
       </div>
+      <div class="skip-row">
+        <span class="skip-label">エピソードの並び順</span>
+        <div class="seg-tabs seg-compact" id="sort-order">
+          <button class="seg-tab active" data-sort="newest">新しい順</button>
+          <button class="seg-tab" data-sort="oldest">古い順</button>
+        </div>
+      </div>
     </div>
     <h3 class="section-heading" id="episode-list-heading">エピソード（${feed.episodes.length}件）</h3>
     <div class="seg-tabs" id="episode-tabs">
@@ -237,8 +244,10 @@ async function openShow(show) {
     });
   }
 
-  // タブ（All / Fresh / Playing）と検索語の組み合わせで絞り込む
+  // タブ（All / Fresh / Playing）・検索語・並び順の組み合わせで絞り込む
+  // feed.episodes は新しい順。古い順はフィルタ後リストを反転して得る。
   let currentTab = 'all';
+  let sortOrder = 'newest';
   function applyFilters() {
     let list = feed.episodes;
     if (currentTab === 'fresh') {
@@ -250,6 +259,9 @@ async function openShow(show) {
     if (q) {
       list = list.filter((ep) => (ep.title + ' ' + ep.description).toLowerCase().includes(q));
     }
+    if (sortOrder === 'oldest') {
+      list = [...list].reverse(); // feed.episodes を破壊しないようコピーして反転
+    }
     renderEpisodeList(list);
   }
 
@@ -260,6 +272,14 @@ async function openShow(show) {
       currentTab = tabBtn.dataset.tab;
       $('episode-tabs').querySelectorAll('.seg-tab')
         .forEach((t) => t.classList.toggle('active', t === tabBtn));
+      applyFilters();
+    });
+  });
+  $('sort-order').querySelectorAll('.seg-tab').forEach((sortBtn) => {
+    sortBtn.addEventListener('click', () => {
+      sortOrder = sortBtn.dataset.sort;
+      $('sort-order').querySelectorAll('.seg-tab')
+        .forEach((t) => t.classList.toggle('active', t === sortBtn));
       applyFilters();
     });
   });
