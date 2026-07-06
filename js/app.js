@@ -12,17 +12,12 @@ import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
 import { loadShowData } from './episodes.js';
 import { generateStudyAid, testApiKey } from './gemini.js';
+import { esc, linkifyTimestamps } from './format.js';
 import { Player } from './player.js';
 
 const player = new Player();
 
 const $ = (id) => document.getElementById(id);
-
-function esc(s) {
-  return String(s ?? '')
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-}
 
 function fmtDate(pubDate) {
   const d = new Date(pubDate);
@@ -317,19 +312,6 @@ async function openShow(show) {
 }
 
 // ---------- エピソード詳細 ----------
-
-// エスケープ済みテキスト中のタイムスタンプ（3:12 / 1:02:33 形式）をリンク化する
-function linkifyTimestamps(escapedText) {
-  return escapedText.replace(
-    /(?<![\d:])(\d{1,2}):([0-5]\d)(?::([0-5]\d))?(?![\d:])/g,
-    (match, a, b, c) => {
-      const sec = c !== undefined
-        ? Number(a) * 3600 + Number(b) * 60 + Number(c)
-        : Number(a) * 60 + Number(b);
-      return `<button class="ts-link" data-sec="${sec}">${match}</button>`;
-    }
-  );
-}
 
 let shownEpisode = null; // エピソードパネルに表示中の {show, episode, key}
 

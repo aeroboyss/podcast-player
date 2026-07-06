@@ -6,6 +6,7 @@ import {
   getShowSkip, getNowPlaying, setNowPlaying,
 } from './storage.js';
 import { scheduleSync } from './sync.js';
+import { esc, linkifyTimestamps } from './format.js';
 
 const SKIP_FORWARD = 15;
 const SKIP_BACK = 30;
@@ -32,9 +33,19 @@ export class Player {
 
     this.el = {
       bar: document.getElementById('player-bar'),
-      artwork: document.getElementById('player-artwork'),
+      miniTitles: document.getElementById('player-mini-titles'),
       epTitle: document.getElementById('player-episode-title'),
       showTitle: document.getElementById('player-show-title'),
+      playMini: document.getElementById('btn-play-mini'),
+      iconPlayMini: document.getElementById('icon-play-mini'),
+      iconPauseMini: document.getElementById('icon-pause-mini'),
+      fullPlayer: document.getElementById('full-player'),
+      fpCollapse: document.getElementById('fp-collapse'),
+      fpEpTitle: document.getElementById('fp-ep-title'),
+      fpShowTitle: document.getElementById('fp-show-title'),
+      fpOpenEpisode: document.getElementById('fp-open-episode'),
+      fpDesc: document.getElementById('fp-desc'),
+      artwork: document.getElementById('player-artwork'),
       range: document.getElementById('player-range'),
       current: document.getElementById('player-current'),
       duration: document.getElementById('player-duration'),
@@ -65,16 +76,35 @@ export class Player {
 
   _bindUi() {
     this.el.play.addEventListener('click', () => this.toggle());
+    this.el.playMini.addEventListener('click', () => this.toggle());
     this.el.rewind.addEventListener('click', () => this.seekBy(-SKIP_BACK));
     this.el.forward.addEventListener('click', () => this.seekBy(SKIP_FORWARD));
     this.el.sleep.addEventListener('click', () => this.toggleSleepTimer());
 
-    // タイトル部タップで画面遷移（エピソードタイトル→概要、番組名→エピソード一覧）
-    this.el.epTitle.addEventListener('click', () => {
-      if (this.current) this.onOpenEpisode?.(this.current.show, this.current.episode);
+    // ミニバーのタイトルタップ → フルプレイヤーを開く
+    this.el.miniTitles.addEventListener('click', () => {
+      if (this.current) this.expandPlayer();
     });
-    this.el.showTitle.addEventListener('click', () => {
-      if (this.current) this.onOpenShow?.(this.current.show);
+    // フルプレイヤーの閉じるボタン（再生は継続）
+    this.el.fpCollapse.addEventListener('click', () => this.collapsePlayer());
+    // フルプレイヤーの番組名タップ → エピソード一覧へ
+    this.el.fpShowTitle.addEventListener('click', () => {
+      if (!this.current) return;
+      this.collapsePlayer();
+      this.onOpenShow?.(this.current.show);
+    });
+    // エピソード詳細（AI 分析）ボタン
+    this.el.fpOpenEpisode.addEventListener('click', () => {
+      if (!this.current) return;
+      this.collapsePlayer();
+      this.onOpenEpisode?.(this.current.show, this.current.episode);
+    });
+    // 概要内のタイムスタンプでシーク
+    this.el.fpDesc.addEventListener('click', (e) => {
+      const link = e.target.closest('.ts-link');
+      if (link && this.current) {
+        this.playEpisodeAt(this.current.show, this.current.episode, Number(link.dataset.sec));
+      }
     });
 
     // 再生設定シートの開閉
@@ -129,9 +159,13 @@ export class Player {
         setPosition(this.current.key, a.currentTime);
       }
     });
-    a.addEventListener('play', () => this._setPlayingUi(true));
+    a.addEventListener('play', () => {
+      this._setPlayingUi(true);
+      this.expandPlayer(); // 再生中はフルプレイヤー表示
+    });
     a.addEventListener('pause', () => {
       this._setPlayingUi(false);
+      this.collapsePlayer(); // 停止中はミニバー表示
       // outro 自動終了後は「聴き終わり(位置0)」の記録を上書きしない
       if (this.current && !this._outroDone) {
         setPosition(this.current.key, a.currentTime);
@@ -167,6 +201,20 @@ export class Player {
   _setPlayingUi(playing) {
     this.el.iconPlay.classList.toggle('hidden', playing);
     this.el.iconPause.classList.toggle('hidden', !playing);
+    this.el.iconPlayMini.classList.toggle('hidden', playing);
+    this.el.iconPauseMini.classList.toggle('hidden', !playing);
+  }
+
+  // フルプレイヤー（再生画面）を開く / 閉じる
+  expandPlayer() {
+    if (!this.current) return;
+    this.el.fullPlayer.classList.remove('hidden');
+    this.el.bar.classList.add('hidden');
+  }
+
+  collapsePlayer() {
+    this.el.fullPlayer.classList.add('hidden');
+    if (this.current) this.el.bar.classList.remove('hidden');
   }
 
   // 番組ごとの再生速度を audio・セグメント表示・設定ボタンに反映
@@ -287,14 +335,21 @@ export class Player {
       );
     }
 
-    this.el.bar.classList.remove('hidden');
-    this.el.artwork.src = show.artwork || '';
+    // ミニバーとフルプレイヤー両方の表示内容を更新
     this.el.epTitle.textContent = episode.title;
     this.el.showTitle.textContent = show.title;
+    this.el.artwork.src = show.artwork || '';
+    this.el.fpEpTitle.textContent = episode.title;
+    this.el.fpShowTitle.textContent = show.title;
+    this.el.fpDesc.innerHTML = episode.description
+      ? linkifyTimestamps(esc(episode.description))
+      : '<span class="ai-note">このエピソードには概要がありません</span>';
     this.el.range.value = String(Math.floor(startAt));
     this.el.current.textContent = fmtTime(startAt);
     this.el.duration.textContent = episode.durationSec ? fmtTime(episode.durationSec) : '--:--';
     this._applyRate();
+    if (play) this.expandPlayer();
+    else this.collapsePlayer(); // 復元時はミニバーのみ
 
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
