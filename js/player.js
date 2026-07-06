@@ -156,6 +156,12 @@ export class Player {
     ms.setActionHandler('pause', () => this.audio.pause());
     ms.setActionHandler('seekbackward', () => this.seekBy(-SKIP_BACK));
     ms.setActionHandler('seekforward', () => this.seekBy(SKIP_FORWARD));
+    // AirPods のダブルタップ（次のトラック）→ 15秒スキップ、
+    // トリプルタップ（前のトラック）→ 30秒巻き戻し
+    try {
+      ms.setActionHandler('nexttrack', () => this.seekBy(SKIP_FORWARD));
+      ms.setActionHandler('previoustrack', () => this.seekBy(-SKIP_BACK));
+    } catch { /* 未対応ブラウザは無視 */ }
   }
 
   _setPlayingUi(playing) {
@@ -242,17 +248,37 @@ export class Player {
     }
   }
 
+  // 指定エピソードの指定秒数へジャンプして再生（概要のタイムスタンプリンク用）
+  playEpisodeAt(show, episode, sec) {
+    const key = episodeKey(show.id, episode);
+    if (this.current?.key === key) {
+      if (this.audio.readyState > 0) {
+        this.audio.currentTime = sec;
+      } else {
+        this.audio.addEventListener(
+          'loadedmetadata',
+          () => { this.audio.currentTime = sec; },
+          { once: true }
+        );
+      }
+      if (this.audio.paused) this.audio.play().catch((e) => console.warn('play failed:', e));
+      return;
+    }
+    if (this.current) setPosition(this.current.key, this.audio.currentTime);
+    this._load(show, episode, key, { play: true, startAt: sec });
+  }
+
   // エピソードをプレイヤーバーにロードする（play=false ならリロード後の復元表示のみ）
-  _load(show, episode, key, { play }) {
+  _load(show, episode, key, { play, startAt: startAtOverride }) {
     this.current = { show, episode, key };
     this._lastSaved = 0;
     this._outroDone = false;
     this.audio.src = episode.enclosureUrl;
 
-    // 再開位置があればそこから、なければ冒頭スキップ設定分を飛ばして開始
+    // 指定位置 > 再開位置 > 冒頭スキップ設定 の優先順で開始位置を決める
     const resumeAt = getPosition(key);
     const { intro } = getShowSkip(show.id);
-    const startAt = resumeAt > 5 ? resumeAt : intro;
+    const startAt = startAtOverride ?? (resumeAt > 5 ? resumeAt : intro);
     if (startAt > 0) {
       this.audio.addEventListener(
         'loadedmetadata',

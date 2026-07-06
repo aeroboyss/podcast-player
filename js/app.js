@@ -318,6 +318,19 @@ async function openShow(show) {
 
 // ---------- エピソード詳細 ----------
 
+// エスケープ済みテキスト中のタイムスタンプ（3:12 / 1:02:33 形式）をリンク化する
+function linkifyTimestamps(escapedText) {
+  return escapedText.replace(
+    /(?<![\d:])(\d{1,2}):([0-5]\d)(?::([0-5]\d))?(?![\d:])/g,
+    (match, a, b, c) => {
+      const sec = c !== undefined
+        ? Number(a) * 3600 + Number(b) * 60 + Number(c)
+        : Number(a) * 60 + Number(b);
+      return `<button class="ts-link" data-sec="${sec}">${match}</button>`;
+    }
+  );
+}
+
 let shownEpisode = null; // エピソードパネルに表示中の {show, episode, key}
 
 function openEpisode(show, episode) {
@@ -337,11 +350,18 @@ function openEpisode(show, episode) {
     <button class="btn btn-primary btn-block" id="ep-play-btn">▶ このエピソードを再生</button>
     ${episode.description ? `
       <h3 class="section-heading">エピソード概要</h3>
-      <div class="ep-desc">${esc(episode.description)}</div>` : ''}
+      <div class="ep-desc">${linkifyTimestamps(esc(episode.description))}</div>` : ''}
     <div class="ai-section" id="ai-section"></div>
   `;
 
   $('ep-play-btn').addEventListener('click', () => player.playEpisode(show, episode));
+
+  // 概要内のタイムスタンプタップでその位置へジャンプ
+  body.querySelector('.ep-desc')?.addEventListener('click', (e) => {
+    const link = e.target.closest('.ts-link');
+    if (link) player.playEpisodeAt(show, episode, Number(link.dataset.sec));
+  });
+
   renderAiSection(show, episode);
 }
 
