@@ -630,38 +630,43 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 
 // ---------- 「戻る」操作（ボタン／左端エッジスワイプ共通） ----------
 
-// 開いている最前面の画面を1階層閉じる。閉じるものがなければ false を返す。
-function goBack() {
-  if (!$('player-settings-overlay').classList.contains('hidden')) {
-    $('player-settings-overlay').classList.add('hidden');
-    return true;
-  }
-  if (!$('episode-panel').classList.contains('hidden')) {
-    $('episode-panel').classList.add('hidden');
-    return true;
-  }
-  if (!$('full-player').classList.contains('hidden')) {
-    player.collapsePlayer();
-    return true;
-  }
-  if (!$('show-panel').classList.contains('hidden')) {
-    $('show-panel').classList.add('hidden');
-    return true;
-  }
-  return false;
-}
-
-// 画面左端からの右スワイプで「戻る」を実行（iOS のスワイプバックに合わせる）
+// 画面左端からの右スワイプで「戻る」。指に追従して最前面の画面を右へスライドさせ、
+// 一定割合を超えたら閉じる（スマホブラウザの戻るジェスチャに近い挙動）。
 (function bindEdgeSwipeBack() {
-  const EDGE = 28;      // 左端からこの範囲で始まったタッチのみ対象（px）
-  const DIST = 70;      // 右方向にこの距離を超えたら発火（px）
-  let startX = 0, startY = 0, tracking = false;
+  const EDGE = 28;          // 左端からこの範囲で始まったタッチのみ対象（px）
+  const CLOSE_RATIO = 0.38; // 画面幅のこの割合を超えて引いたら閉じる
+  let startX = 0, startY = 0, tracking = false, dragging = false, panel = null, w = 0;
+
+  // スライド対象の最前面パネル（下から出る設定シートは対象外）
+  function frontPanel() {
+    for (const id of ['episode-panel', 'full-player', 'show-panel']) {
+      const el = $(id);
+      if (!el.classList.contains('hidden')) return el;
+    }
+    return null;
+  }
+
+  function clearStyle(el) {
+    el.style.transform = '';
+    el.style.transition = '';
+    el.style.boxShadow = '';
+    el.style.willChange = '';
+  }
+
+  function closePanel(el) {
+    // 先に非表示にしてから transform をリセット（戻る際のちらつき防止）
+    if (el.id === 'full-player') player.collapsePlayer();
+    else el.classList.add('hidden');
+    clearStyle(el);
+  }
 
   document.addEventListener('touchstart', (e) => {
     const t = e.touches[0];
     tracking = t.clientX <= EDGE;
     startX = t.clientX;
     startY = t.clientY;
+    dragging = false;
+    panel = null;
   }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
@@ -669,14 +674,61 @@ function goBack() {
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
-    // 横方向が主でかつ十分右へ動いたら戻る（縦スクロールとの誤検出を避ける）
-    if (dx > DIST && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      tracking = false;
-      goBack();
-    }
-  }, { passive: true });
 
-  document.addEventListener('touchend', () => { tracking = false; }, { passive: true });
+    if (!dragging) {
+      if (dx > 10 && dx > Math.abs(dy) * 1.2) {
+        // 設定シートが開いているときはスライドせず即閉じる
+        const sheet = $('player-settings-overlay');
+        if (!sheet.classList.contains('hidden')) {
+          sheet.classList.add('hidden');
+          tracking = false;
+          return;
+        }
+        panel = frontPanel();
+        if (!panel) { tracking = false; return; }
+        dragging = true;
+        w = window.innerWidth;
+        panel.style.transition = 'none';
+        panel.style.willChange = 'transform';
+      } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+        tracking = false; // 縦スクロールを優先
+        return;
+      } else {
+        return;
+      }
+    }
+    if (dragging) {
+      e.preventDefault(); // ドラッグ中は縦スクロール等を抑止
+      const x = Math.max(0, dx);
+      panel.style.transform = `translateX(${x}px)`;
+      panel.style.boxShadow = '-8px 0 24px rgba(0,0,0,0.4)';
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (dragging && panel) {
+      const el = panel;
+      const dx = (e.changedTouches[0]?.clientX ?? startX) - startX;
+      if (dx > w * CLOSE_RATIO) {
+        // しきい値超え: 画面外へスライドさせて閉じる
+        let done = false;
+        const finish = () => { if (done) return; done = true; closePanel(el); };
+        el.style.transition = 'transform 0.2s ease-out';
+        el.style.transform = `translateX(${w}px)`;
+        el.addEventListener('transitionend', finish, { once: true });
+        setTimeout(finish, 300); // transitionend が来ない場合の保険
+      } else {
+        // しきい値未満: 元の位置へスナップバック（閉じない）
+        el.style.transition = 'transform 0.2s ease-out';
+        el.style.transform = 'translateX(0)';
+        el.addEventListener('transitionend', () => clearStyle(el), { once: true });
+        setTimeout(() => clearStyle(el), 300);
+      }
+    }
+    tracking = false;
+    dragging = false;
+    panel = null;
+  }, { passive: true });
 })();
 
 // ---------- 初期表示 ----------

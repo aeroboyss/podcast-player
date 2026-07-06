@@ -542,22 +542,15 @@ html, body {
   min-height: 0;
   position: relative;
 }
-.fp-collapse {
-  position: absolute;
-  top: calc(env(safe-area-inset-top) + 8px);
-  left: 10px;
-  z-index: 2;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 36px; height: 36px;
-  color: var(--text);
+/* 閉じる（下向き）ボタン: 下部の操作列の左端に配置 */
+.btn-fp-collapse {
+  grid-column: 1;
+  justify-self: start;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
 }
-.fp-collapse svg { width: 22px; height: 22px; fill: currentColor; }
+.btn-fp-collapse svg { width: 22px; height: 22px; fill: currentColor; }
 .fp-scroll {
   height: 100%;
   overflow-y: auto;
@@ -666,8 +659,8 @@ input[type="range"]::-webkit-slider-thumb {
   border-color: var(--accent);
 }
 .btn-player-settings {
-  grid-column: 1;
-  justify-self: start;
+  grid-column: 3;
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 5px;

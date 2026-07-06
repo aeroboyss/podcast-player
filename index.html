@@ -114,9 +114,6 @@
   <!-- フルプレイヤー（再生時） -->
   <div id="full-player" class="full-player hidden">
     <div class="fp-top">
-      <button id="fp-collapse" class="fp-collapse" aria-label="プレイヤーを閉じる">
-        <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-      </button>
       <div class="fp-scroll">
         <img id="player-artwork" class="fp-artwork" alt="">
         <div id="fp-ep-title" class="fp-ep-title"></div>
@@ -132,6 +129,9 @@
         <span id="player-duration" class="player-time">0:00</span>
       </div>
       <div class="player-controls">
+        <button id="fp-collapse" class="btn-rate btn-fp-collapse" aria-label="プレイヤーを閉じる">
+          <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+        </button>
         <button id="btn-player-settings" class="btn-rate btn-player-settings" aria-label="再生設定">
           <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 00.12-.61l-1.92-3.32a.5.5 0 00-.59-.22l-2.39.96a7.03 7.03 0 00-1.62-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 00-.59.22L2.68 8.87a.5.5 0 00.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.5.5 0 00-.12.61l1.92 3.32c.14.24.42.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.23.09.49 0 .59-.22l1.92-3.32a.5.5 0 00-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
           <span id="player-settings-status"></span>
