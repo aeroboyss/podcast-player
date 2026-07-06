@@ -159,13 +159,11 @@ export class Player {
         setPosition(this.current.key, a.currentTime);
       }
     });
-    a.addEventListener('play', () => {
-      this._setPlayingUi(true);
-      this.expandPlayer(); // 再生中はフルプレイヤー表示
-    });
+    // 再生/一時停止のトグルでは画面を切り替えない（今の画面に留まる）。
+    // フルプレイヤーの表示切替は新規再生時(_load)とミニバー/∨の手動操作で行う。
+    a.addEventListener('play', () => this._setPlayingUi(true));
     a.addEventListener('pause', () => {
       this._setPlayingUi(false);
-      this.collapsePlayer(); // 停止中はミニバー表示
       // outro 自動終了後は「聴き終わり(位置0)」の記録を上書きしない
       if (this.current && !this._outroDone) {
         setPosition(this.current.key, a.currentTime);
