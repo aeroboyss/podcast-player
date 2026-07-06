@@ -253,13 +253,33 @@ html, body {
   margin: 18px 0 6px;
 }
 
-/* skip settings */
+/* skip settings（折りたたみ） */
 .skip-settings {
   background: var(--card);
   border-radius: 12px;
-  padding: 2px 14px;
   margin: 4px 0 10px;
+  overflow: hidden;
 }
+.skip-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  list-style: none;
+}
+.skip-summary::-webkit-details-marker { display: none; }
+.skip-chevron {
+  width: 18px; height: 18px;
+  fill: currentColor;
+  transition: transform 0.2s;
+}
+.skip-settings[open] .skip-summary { color: var(--text); }
+.skip-settings[open] .skip-chevron { transform: rotate(180deg); }
+.skip-body { padding: 0 14px 2px; border-top: 1px solid var(--border); }
 .skip-row {
   display: flex;
   justify-content: space-between;

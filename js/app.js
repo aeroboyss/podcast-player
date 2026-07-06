@@ -177,35 +177,41 @@ async function openShow(show) {
     ${desc ? `
       <div class="show-desc desc-clamp" id="show-desc">${esc(desc)}</div>
       <button class="desc-toggle" id="desc-toggle">すべて表示</button>` : ''}
-    <div class="skip-settings">
-      <div class="skip-row">
-        <span class="skip-label">冒頭をスキップ</span>
-        <div class="stepper">
-          <button class="stepper-btn" data-skip="intro" data-delta="-5" aria-label="5秒減らす">−</button>
-          <span class="stepper-val" id="skip-intro-val"></span>
-          <button class="stepper-btn" data-skip="intro" data-delta="5" aria-label="5秒増やす">＋</button>
+    <details class="skip-settings">
+      <summary class="skip-summary">
+        <span>再生・表示の設定</span>
+        <svg class="skip-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+      </summary>
+      <div class="skip-body">
+        <div class="skip-row">
+          <span class="skip-label">冒頭をスキップ</span>
+          <div class="stepper">
+            <button class="stepper-btn" data-skip="intro" data-delta="-5" aria-label="5秒減らす">−</button>
+            <span class="stepper-val" id="skip-intro-val"></span>
+            <button class="stepper-btn" data-skip="intro" data-delta="5" aria-label="5秒増やす">＋</button>
+          </div>
+        </div>
+        <div class="skip-row">
+          <span class="skip-label">終わりの手前で終了</span>
+          <div class="stepper">
+            <button class="stepper-btn" data-skip="outro" data-delta="-5" aria-label="5秒減らす">−</button>
+            <span class="stepper-val" id="skip-outro-val"></span>
+            <button class="stepper-btn" data-skip="outro" data-delta="5" aria-label="5秒増やす">＋</button>
+          </div>
+        </div>
+        <div class="skip-row">
+          <span class="skip-label">再生開始時に AI 分析を自動生成</span>
+          <button class="toggle" id="auto-ai-toggle" role="switch" aria-label="AI分析の自動生成"></button>
+        </div>
+        <div class="skip-row">
+          <span class="skip-label">エピソードの並び順</span>
+          <div class="seg-tabs seg-compact" id="sort-order">
+            <button class="seg-tab active" data-sort="newest">新しい順</button>
+            <button class="seg-tab" data-sort="oldest">古い順</button>
+          </div>
         </div>
       </div>
-      <div class="skip-row">
-        <span class="skip-label">終わりの手前で終了</span>
-        <div class="stepper">
-          <button class="stepper-btn" data-skip="outro" data-delta="-5" aria-label="5秒減らす">−</button>
-          <span class="stepper-val" id="skip-outro-val"></span>
-          <button class="stepper-btn" data-skip="outro" data-delta="5" aria-label="5秒増やす">＋</button>
-        </div>
-      </div>
-      <div class="skip-row">
-        <span class="skip-label">再生開始時に AI 分析を自動生成</span>
-        <button class="toggle" id="auto-ai-toggle" role="switch" aria-label="AI分析の自動生成"></button>
-      </div>
-      <div class="skip-row">
-        <span class="skip-label">エピソードの並び順</span>
-        <div class="seg-tabs seg-compact" id="sort-order">
-          <button class="seg-tab active" data-sort="newest">新しい順</button>
-          <button class="seg-tab" data-sort="oldest">古い順</button>
-        </div>
-      </div>
-    </div>
+    </details>
     <h3 class="section-heading" id="episode-list-heading">エピソード（${feed.episodes.length}件）</h3>
     <div class="seg-tabs" id="episode-tabs">
       <button class="seg-tab active" data-tab="all">All</button>
