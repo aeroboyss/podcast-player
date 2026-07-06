@@ -625,6 +625,59 @@ player.onOpenShow = (show) => {
 };
 player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 
+// ---------- 「戻る」操作（ボタン／左端エッジスワイプ共通） ----------
+
+// 開いている最前面の画面を1階層閉じる。閉じるものがなければ false を返す。
+function goBack() {
+  if (!$('player-settings-overlay').classList.contains('hidden')) {
+    $('player-settings-overlay').classList.add('hidden');
+    return true;
+  }
+  if (!$('episode-panel').classList.contains('hidden')) {
+    $('episode-panel').classList.add('hidden');
+    return true;
+  }
+  if (!$('full-player').classList.contains('hidden')) {
+    player.collapsePlayer();
+    return true;
+  }
+  if (!$('show-panel').classList.contains('hidden')) {
+    $('show-panel').classList.add('hidden');
+    return true;
+  }
+  return false;
+}
+
+// 画面左端からの右スワイプで「戻る」を実行（iOS のスワイプバックに合わせる）
+(function bindEdgeSwipeBack() {
+  const EDGE = 28;      // 左端からこの範囲で始まったタッチのみ対象（px）
+  const DIST = 70;      // 右方向にこの距離を超えたら発火（px）
+  let startX = 0, startY = 0, tracking = false;
+
+  document.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    tracking = t.clientX <= EDGE;
+    startX = t.clientX;
+    startY = t.clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!tracking) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    // 横方向が主でかつ十分右へ動いたら戻る（縦スクロールとの誤検出を避ける）
+    if (dx > DIST && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      tracking = false;
+      goBack();
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => { tracking = false; }, { passive: true });
+})();
+
+// ---------- 初期表示 ----------
+
 renderFavorites();
 renderSyncStatus();
 initSync();
