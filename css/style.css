@@ -428,6 +428,28 @@ html, body {
 }
 .ai-section h3 { font-size: 16px; margin-bottom: 8px; }
 .ai-note { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+
+/* 生成済み AI 分析・クイズの折りたたみ */
+.ai-result-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+  font-weight: 800;
+}
+.ai-result-summary::-webkit-details-marker { display: none; }
+.ai-result-summary::marker { content: ''; }
+.ai-result .skip-chevron {
+  width: 18px; height: 18px;
+  fill: currentColor;
+  color: var(--text-dim);
+  transition: transform 0.2s;
+}
+.ai-result[open] .skip-chevron { transform: rotate(180deg); }
+.ai-result[open] .ai-result-summary { margin-bottom: 12px; }
+.ai-result-body h3:first-child { margin-top: 0; }
 .ai-status {
   font-size: 13.5px;
   color: var(--accent);

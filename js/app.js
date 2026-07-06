@@ -359,10 +359,10 @@ function openEpisode(show, episode) {
       ${episode.durationSec ? ' ・ ' + esc(fmtDuration(episode.durationSec)) : ''}
     </div>
     <button class="btn btn-primary btn-block" id="ep-play-btn">▶ このエピソードを再生</button>
+    <div class="ai-section" id="ai-section"></div>
     ${episode.description ? `
       <h3 class="section-heading">エピソード概要</h3>
       <div class="ep-desc">${linkifyTimestamps(esc(episode.description))}</div>` : ''}
-    <div class="ai-section" id="ai-section"></div>
   `;
 
   $('ep-play-btn').addEventListener('click', () => player.playEpisode(show, episode));
@@ -474,27 +474,35 @@ function maybeAutoGenerate(show, episode) {
 function renderAiResult(section, show, episode, result) {
   const date = new Date(result.generatedAt);
   section.innerHTML = `
-    <h3>重要ポイント</h3>
-    ${Array.isArray(result.keyPoints) && result.keyPoints.length ? `
-      <ul class="ai-keypoints">
-        ${result.keyPoints.map((p) => `<li>${esc(p)}</li>`).join('')}
-      </ul>` : '<p class="ai-note">重要ポイントがありません</p>'}
-    ${Array.isArray(result.keyQuestions) && result.keyQuestions.length ? `
-      <h3 style="margin-top:18px">立てるべき問い</h3>
-      <div class="ai-questions">
-        ${result.keyQuestions.map((q, i) => `
-          <div class="ai-qa">
-            <div class="ai-qa-q">Q${i + 1}. ${esc(q.question)}</div>
-            <div class="ai-qa-a">${esc(q.answer)}</div>
-          </div>`).join('')}
-      </div>` : ''}
-    <h3 style="margin-top:18px">理解度クイズ</h3>
-    <div id="quiz-container"></div>
-    <div class="ai-meta">
-      ${result.source === 'transcript' ? '文字起こし' : '音声'}から生成
-      ・ ${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}
-    </div>
-    <button class="btn btn-sub btn-block" id="ai-regenerate-btn">再生成する</button>
+    <details class="ai-result" open>
+      <summary class="ai-result-summary">
+        <span>AI 分析とクイズ</span>
+        <svg class="skip-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+      </summary>
+      <div class="ai-result-body">
+        <h3>重要ポイント</h3>
+        ${Array.isArray(result.keyPoints) && result.keyPoints.length ? `
+          <ul class="ai-keypoints">
+            ${result.keyPoints.map((p) => `<li>${esc(p)}</li>`).join('')}
+          </ul>` : '<p class="ai-note">重要ポイントがありません</p>'}
+        ${Array.isArray(result.keyQuestions) && result.keyQuestions.length ? `
+          <h3 style="margin-top:18px">立てるべき問い</h3>
+          <div class="ai-questions">
+            ${result.keyQuestions.map((q, i) => `
+              <div class="ai-qa">
+                <div class="ai-qa-q">Q${i + 1}. ${esc(q.question)}</div>
+                <div class="ai-qa-a">${esc(q.answer)}</div>
+              </div>`).join('')}
+          </div>` : ''}
+        <h3 style="margin-top:18px">理解度クイズ</h3>
+        <div id="quiz-container"></div>
+        <div class="ai-meta">
+          ${result.source === 'transcript' ? '文字起こし' : '音声'}から生成
+          ・ ${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}
+        </div>
+        <button class="btn btn-sub btn-block" id="ai-regenerate-btn">再生成する</button>
+      </div>
+    </details>
   `;
   renderQuiz($('quiz-container'), result.quiz);
   $('ai-regenerate-btn').addEventListener('click', () => runGenerate(show, episode));
