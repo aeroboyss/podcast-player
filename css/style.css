@@ -22,6 +22,17 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
   font-size: 16px;
   overscroll-behavior-y: none;
+  /* 横スワイプで空白領域へ移動してしまうのを防ぐ */
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* 長い URL や連続文字列がはみ出さないよう本文テキストは折り返す */
+.ep-desc, .fp-desc, .show-desc, .ai-summary, .ai-qa-a, .ai-keypoints li,
+.ai-qa-q, .quiz-q-text, .quiz-choice, .quiz-explain, .episode-title,
+.result-title, .result-author, .ai-error, .ai-note {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .hidden { display: none !important; }
@@ -179,6 +190,7 @@ html, body {
   background: var(--bg);
   z-index: 20;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 .panel-header {
