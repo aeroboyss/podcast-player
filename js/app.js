@@ -641,8 +641,8 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 // 画面左端からの右スワイプで「戻る」。指に追従して最前面の画面を右へスライドさせ、
 // 一定割合を超えたら閉じる（スマホブラウザの戻るジェスチャに近い挙動）。
 (function bindEdgeSwipeBack() {
-  const EDGE = 28;          // 左端からこの範囲で始まったタッチのみ対象（px）
-  const CLOSE_RATIO = 0.38; // 画面幅のこの割合を超えて引いたら閉じる
+  const EDGE = 28;         // 左端からこの範囲で始まったタッチのみ対象（px）
+  const CLOSE_DIST = 35;   // 右へこの距離(px)以上引いたら閉じる
   let startX = 0, startY = 0, tracking = false, dragging = false, panel = null, w = 0;
 
   // スライド対象の最前面パネル（下から出る設定シートは対象外）
@@ -717,7 +717,7 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
     if (dragging && panel) {
       const el = panel;
       const dx = (e.changedTouches[0]?.clientX ?? startX) - startX;
-      if (dx > w * CLOSE_RATIO) {
+      if (dx > CLOSE_DIST) {
         // しきい値超え: 画面外へスライドさせて閉じる
         let done = false;
         const finish = () => { if (done) return; done = true; closePanel(el); };
