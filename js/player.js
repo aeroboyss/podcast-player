@@ -55,6 +55,7 @@ export class Player {
       rewind: document.getElementById('btn-rewind'),
       forward: document.getElementById('btn-forward'),
       rateCycle: document.getElementById('btn-rate-cycle'),
+      fpChat: document.getElementById('fp-chat'),
       sleep: document.getElementById('btn-sleep'),
       sleepLabel: document.getElementById('sleep-label'),
     };
@@ -64,6 +65,7 @@ export class Player {
     // 画面遷移・再生開始コールバック（app.js から設定される）
     this.onOpenEpisode = null;
     this.onOpenShow = null;
+    this.onOpenChat = null;
     this.onPlayStarted = null;
 
     this._bindUi();
@@ -95,6 +97,12 @@ export class Player {
       if (!this.current) return;
       this.collapsePlayer();
       this.onOpenEpisode?.(this.current.show, this.current.episode);
+    });
+    // AI 質問チャット
+    this.el.fpChat.addEventListener('click', () => {
+      if (!this.current) return;
+      this.collapsePlayer();
+      this.onOpenChat?.(this.current.show, this.current.episode);
     });
     // 概要内のタイムスタンプでシーク
     this.el.fpDesc.addEventListener('click', (e) => {

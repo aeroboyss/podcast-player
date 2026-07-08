@@ -99,6 +99,21 @@
     <div id="episode-panel-body" class="panel-body"></div>
   </div>
 
+  <!-- AI質問チャットパネル -->
+  <div id="chat-panel" class="panel chat-panel hidden">
+    <header class="panel-header chat-header">
+      <button class="btn-back" data-close="chat-panel">‹ 戻る</button>
+      <div class="chat-title" id="chat-title"></div>
+    </header>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-input-row">
+      <input id="chat-input" type="text" placeholder="エピソードについて質問…" autocomplete="off" enterkeyhint="send">
+      <button id="chat-send" class="btn btn-primary chat-send" aria-label="送信">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
   <!-- ミニプレイヤー（未再生・一時停止時） -->
   <div id="player-bar" class="player-bar hidden">
     <div id="player-mini-titles" class="mini-titles">
@@ -147,7 +162,9 @@
           <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
         </button>
         <button id="btn-rate-cycle" class="btn-rate fp-action" aria-label="再生速度（タップで切替）">1.0x</button>
-        <span class="fp-action-empty"></span>
+        <button id="fp-chat" class="btn-rate fp-action" aria-label="このエピソードについてAIに質問">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 9h10v2H7V9zm6 5H7v-2h6v2zm4-6H7V6h10v2z"/></svg>
+        </button>
         <button id="btn-sleep" class="btn-rate fp-action" aria-label="睡眠タイマー（20分で自動停止）">
           <span class="sleep-moon">🌙</span><span id="sleep-label"></span>
         </button>

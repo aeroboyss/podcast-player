@@ -102,6 +102,62 @@ export async function testApiKey(apiKey) {
   }
 }
 
+// ---- エピソードについての AI チャット ----
+
+// チャット用コンテキストを取得（文字起こしがあればそれを使用）
+export async function fetchChatContext(episode, onStatus) {
+  const transcript = pickTranscript(episode.transcripts || []);
+  if (transcript) {
+    onStatus?.('文字起こしを取得中…');
+    try {
+      const text = await fetchTranscriptText(transcript);
+      if (text.length > 200) {
+        return { source: 'transcript', text: text.slice(0, MAX_TRANSCRIPT_CHARS) };
+      }
+    } catch (e) {
+      console.warn('チャット用文字起こしの取得に失敗:', e);
+    }
+  }
+  return { source: 'meta', text: '' };
+}
+
+// エピソード内容をコンテキストに、会話履歴つきで質問に答える
+export async function chatAboutEpisode({ apiKey, show, episode, context, aiResult, history }) {
+  const ctx = [`番組名: ${show.title}`, `エピソード: ${episode.title}`];
+  if (episode.description) ctx.push(`エピソード概要:\n${episode.description}`);
+  if (context?.text) {
+    ctx.push(`文字起こし（全文または冒頭部分）:\n${context.text}`);
+  } else if (aiResult) {
+    const parts = [];
+    if (aiResult.keyPoints?.length) parts.push('重要ポイント:\n' + aiResult.keyPoints.join('\n'));
+    if (aiResult.keyQuestions?.length) {
+      parts.push('問いと答え:\n' + aiResult.keyQuestions.map((q) => `Q: ${q.question}\nA: ${q.answer}`).join('\n'));
+    }
+    if (parts.length) ctx.push('AI 分析結果（事前生成）:\n' + parts.join('\n\n'));
+  }
+
+  const systemText =
+    'あなたはポッドキャストエピソードの内容について質問に答えるアシスタントです。' +
+    '以下のエピソード情報に基づいて、日本語で簡潔かつ具体的に答えてください。' +
+    '情報に含まれない内容を聞かれたら、推測であることを明示するか「エピソード内では触れられていません」と答えてください。\n\n' +
+    ctx.join('\n\n');
+
+  const res = await fetch(`${API_BASE}/v1beta/models/${MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemText }] },
+      contents: history.slice(-20).map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
+      generationConfig: { temperature: 0.6 },
+    }),
+  });
+  if (!res.ok) throw new Error(await describeGoogleError(res, 'Gemini API エラー'));
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
+  if (!text) throw new Error('AI から回答を取得できませんでした。再試行してください。');
+  return text.trim();
+}
+
 async function callGenerate(apiKey, parts) {
   const res = await fetch(
     `${API_BASE}/v1beta/models/${MODEL}:generateContent`,

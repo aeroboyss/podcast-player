@@ -11,7 +11,7 @@ import {
 import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
 import { loadShowData } from './episodes.js';
-import { generateStudyAid, testApiKey } from './gemini.js';
+import { generateStudyAid, testApiKey, fetchChatContext, chatAboutEpisode } from './gemini.js';
 import { esc, linkifyTimestamps } from './format.js';
 import { Player } from './player.js';
 
@@ -359,6 +359,7 @@ function openEpisode(show, episode) {
       ${episode.durationSec ? ' ・ ' + esc(fmtDuration(episode.durationSec)) : ''}
     </div>
     <button class="btn btn-primary btn-block" id="ep-play-btn">▶ このエピソードを再生</button>
+    <button class="btn btn-sub btn-block" id="ep-chat-btn">💬 このエピソードについて AI に質問</button>
     <div class="ai-section" id="ai-section"></div>
     ${episode.description ? `
       <h3 class="section-heading">エピソード概要</h3>
@@ -366,6 +367,7 @@ function openEpisode(show, episode) {
   `;
 
   $('ep-play-btn').addEventListener('click', () => player.playEpisode(show, episode));
+  $('ep-chat-btn').addEventListener('click', () => openChat(show, episode));
 
   // 概要内のタイムスタンプタップでその位置へジャンプ
   body.querySelector('.ep-desc')?.addEventListener('click', (e) => {
@@ -558,6 +560,99 @@ function renderQuiz(container, quiz) {
   });
 }
 
+// ---------- AI 質問チャット ----------
+
+const chatHistories = new Map(); // episodeKey -> [{role:'user'|'model', text, error?}]
+const chatContexts = new Map();  // episodeKey -> {source, text}（文字起こしの取得結果キャッシュ）
+let chatCtx = null;              // 表示中のチャット対象 {show, episode, key}
+
+function openChat(show, episode) {
+  chatCtx = { show, episode, key: episodeKey(show.id, episode) };
+  $('chat-title').textContent = episode.title;
+  $('chat-panel').classList.remove('hidden');
+  renderChatMessages();
+  $('chat-input').focus();
+}
+
+function renderChatMessages() {
+  if (!chatCtx) return;
+  const box = $('chat-messages');
+  const history = chatHistories.get(chatCtx.key) || [];
+  box.innerHTML = history.length
+    ? history.map((m) => {
+        const cls = m.error ? 'info' : m.role === 'user' ? 'user' : 'model';
+        const html = m.role === 'model' && !m.error
+          ? linkifyTimestamps(esc(m.text))
+          : esc(m.text);
+        return `<div class="chat-msg ${cls}">${html}</div>`;
+      }).join('')
+    : `<div class="chat-msg info">このエピソードの内容について AI に質問できます。\n例：「結論は何？」「◯◯について何と言っていた？」</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendChat() {
+  if (!chatCtx || $('chat-send').disabled) return;
+  const input = $('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+
+  const { show, episode, key } = chatCtx;
+  const history = chatHistories.get(key) || [];
+  chatHistories.set(key, history);
+
+  if (!getApiKey()) {
+    history.push({ role: 'model', text: 'Gemini API キーが未設定です。「設定」タブでキーを保存してください。', error: true });
+    renderChatMessages();
+    return;
+  }
+
+  history.push({ role: 'user', text: q });
+  input.value = '';
+  renderChatMessages();
+
+  // 入力中インジケータ
+  const box = $('chat-messages');
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg model';
+  typing.innerHTML = '<span class="spinner"></span>考え中…';
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+  $('chat-send').disabled = true;
+
+  try {
+    // 初回のみ文字起こしを取得してキャッシュ
+    let context = chatContexts.get(key);
+    if (context === undefined) {
+      context = await fetchChatContext(episode, (msg) => {
+        typing.innerHTML = `<span class="spinner"></span>${esc(msg)}`;
+      });
+      chatContexts.set(key, context);
+    }
+    const reply = await chatAboutEpisode({
+      apiKey: getApiKey(), show, episode, context,
+      aiResult: getAiResult(key),
+      history: history.filter((m) => !m.error), // エラーメッセージは会話履歴に含めない
+    });
+    history.push({ role: 'model', text: reply });
+  } catch (e) {
+    console.error('チャットに失敗:', e);
+    history.push({ role: 'model', text: '生成に失敗しました。\n' + e.message, error: true });
+  }
+  $('chat-send').disabled = false;
+  renderChatMessages();
+  input.focus();
+}
+
+$('chat-send').addEventListener('click', sendChat);
+$('chat-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing) sendChat();
+});
+// 回答内のタイムスタンプでその位置へジャンプ
+$('chat-messages').addEventListener('click', (e) => {
+  const link = e.target.closest('.ts-link');
+  if (link && chatCtx) player.playEpisodeAt(chatCtx.show, chatCtx.episode, Number(link.dataset.sec));
+});
+
 // ---------- 設定 ----------
 
 $('api-key-input').value = getApiKey();
@@ -634,6 +729,7 @@ player.onOpenShow = (show) => {
   $('episode-panel').classList.add('hidden'); // エピソード詳細が開いていたら閉じて一覧を出す
   openShow(show);
 };
+player.onOpenChat = (show, episode) => openChat(show, episode);
 player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 
 // ---------- 「戻る」操作（ボタン／左端エッジスワイプ共通） ----------
@@ -645,9 +741,9 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
   const CLOSE_DIST = 35;   // 右へこの距離(px)以上引いたら閉じる
   let startX = 0, startY = 0, tracking = false, dragging = false, panel = null, w = 0;
 
-  // スライド対象の最前面パネル（下から出る設定シートは対象外）
+  // スライド対象の最前面パネル
   function frontPanel() {
-    for (const id of ['episode-panel', 'full-player', 'show-panel']) {
+    for (const id of ['chat-panel', 'episode-panel', 'full-player', 'show-panel']) {
       const el = $(id);
       if (!el.classList.contains('hidden')) return el;
     }
