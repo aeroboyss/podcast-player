@@ -102,6 +102,7 @@ function mergeStates(local, remote) {
     rate: mergeByKey(local.rate, remote.rate),
     skip: mergeByKey(local.skip, remote.skip),
     autoai: mergeByKey(local.autoai, remote.autoai),
+    newepai: mergeByKey(local.newepai, remote.newepai),
   };
 }
 

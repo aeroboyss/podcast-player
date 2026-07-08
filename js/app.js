@@ -6,7 +6,7 @@ import {
   getGhToken, setGhToken, getLastSync,
   getAiResult, setAiResult, episodeKey,
   getPosition, hasPlayed, getShowSkip, setShowSkip,
-  getShowAutoAi, setShowAutoAi,
+  getShowAutoAi, setShowAutoAi, getShowNewEpAi, setShowNewEpAi,
 } from './storage.js';
 import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
@@ -207,6 +207,10 @@ async function openShow(show) {
           <button class="toggle" id="auto-ai-toggle" role="switch" aria-label="AI分析の自動生成"></button>
         </div>
         <div class="skip-row">
+          <span class="skip-label">新着エピソードを自動で AI 分析</span>
+          <button class="toggle" id="new-ep-ai-toggle" role="switch" aria-label="新着エピソードの自動AI分析"></button>
+        </div>
+        <div class="skip-row">
           <span class="skip-label">エピソードの並び順</span>
           <div class="seg-tabs seg-compact" id="sort-order">
             <button class="seg-tab active" data-sort="newest">新しい順</button>
@@ -336,6 +340,17 @@ async function openShow(show) {
     setShowAutoAi(show.id, next);
     autoToggle.classList.toggle('on', next);
     scheduleSync();
+  });
+
+  // 新着エピソードの自動AI分析のON/OFF（デフォルトOFF）
+  const newEpToggle = $('new-ep-ai-toggle');
+  newEpToggle.classList.toggle('on', getShowNewEpAi(show.id));
+  newEpToggle.addEventListener('click', () => {
+    const next = !getShowNewEpAi(show.id);
+    setShowNewEpAi(show.id, next);
+    newEpToggle.classList.toggle('on', next);
+    scheduleSync();
+    if (next) autoAnalyzeNewEpisodes(); // ONにした直後に最新話をチェック
   });
 
 }
@@ -471,6 +486,33 @@ function runGenerate(show, episode) {
 // 再生開始時の自動生成（番組ごとの設定が ON の場合のみ）
 function maybeAutoGenerate(show, episode) {
   if (getShowAutoAi(show.id)) startGeneration(show, episode);
+}
+
+// 「新着エピソードを自動でAI分析」がONの番組について、
+// 最新エピソードが未分析なら自動生成する（アプリ起動時などに実行）
+let newEpCheckRunning = false;
+async function autoAnalyzeNewEpisodes() {
+  if (newEpCheckRunning || !getApiKey()) return;
+  newEpCheckRunning = true;
+  try {
+    for (const show of getFavorites()) {
+      if (!getShowNewEpAi(show.id)) continue;
+      try {
+        const data = await loadShowData(show); // 30分キャッシュ付き
+        const latest = data.episodes[0];
+        if (!latest) continue;
+        const key = episodeKey(show.id, latest);
+        if (getAiResult(key) || aiInFlight.has(key)) continue;
+        console.info(`新着エピソードをAI分析: ${show.title} / ${latest.title}`);
+        const epShow = { ...show, title: data.title || show.title, artwork: show.artwork || data.artwork };
+        await startGeneration(epShow, latest); // 逐次実行（同時多発を避ける）
+      } catch (e) {
+        console.warn(`新着チェックに失敗 (${show.title}):`, e);
+      }
+    }
+  } finally {
+    newEpCheckRunning = false;
+  }
 }
 
 function renderAiResult(section, show, episode, result) {
@@ -845,3 +887,7 @@ renderFavorites();
 renderSyncStatus();
 initSync();
 player.restore(); // 前回再生していたエピソードをプレイヤーバーに復元
+
+// 新着エピソードの自動AI分析チェック。
+// 同期(initSync)が他端末の生成結果を取り込むのを待ってから実行し、二重生成を避ける
+setTimeout(autoAnalyzeNewEpisodes, 8000);

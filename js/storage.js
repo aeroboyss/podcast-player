@@ -15,6 +15,7 @@ const K = {
   rate: 'pp.rate.',  // + showId（番組ごとの再生速度）
   skip: 'pp.skip.',  // + showId（番組ごとの冒頭/終わりスキップ秒数）
   autoai: 'pp.autoai.', // + showId（再生開始時にAI分析を自動生成するか）
+  newepai: 'pp.newepai.', // + showId（新着エピソードを自動でAI分析するか）
   feed: 'pp.feed.',  // + showId
 };
 
@@ -134,6 +135,7 @@ export function exportState() {
     rate: collectPrefixed(K.rate),
     skip: collectPrefixed(K.skip),
     autoai: collectPrefixed(K.autoai),
+    newepai: collectPrefixed(K.newepai),
   };
 }
 
@@ -149,6 +151,7 @@ export function applyState(state) {
   for (const [key, value] of Object.entries(state.rate || {})) setJSON(K.rate + key, value);
   for (const [key, value] of Object.entries(state.skip || {})) setJSON(K.skip + key, value);
   for (const [key, value] of Object.entries(state.autoai || {})) setJSON(K.autoai + key, value);
+  for (const [key, value] of Object.entries(state.newepai || {})) setJSON(K.newepai + key, value);
   localStorage.setItem(K.lastSync, String(Date.now()));
 }
 
@@ -225,6 +228,15 @@ export function getShowAutoAi(showId) {
 
 export function setShowAutoAi(showId, on) {
   setJSON(K.autoai + showId, { on: !!on, at: Date.now() });
+}
+
+// ---- 番組ごとの新着エピソード自動AI分析（デフォルトOFF） ----
+export function getShowNewEpAi(showId) {
+  return !!getJSON(K.newepai + showId, null)?.on;
+}
+
+export function setShowNewEpAi(showId, on) {
+  setJSON(K.newepai + showId, { on: !!on, at: Date.now() });
 }
 
 // ---- 再生中エピソード（リロード後の復元用） ----
