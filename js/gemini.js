@@ -137,9 +137,11 @@ export async function chatAboutEpisode({ apiKey, show, episode, context, aiResul
   }
 
   const systemText =
-    'あなたはポッドキャストエピソードの内容について質問に答えるアシスタントです。' +
-    '以下のエピソード情報に基づいて、日本語で簡潔かつ具体的に答えてください。' +
-    '情報に含まれない内容を聞かれたら、推測であることを明示するか「エピソード内では触れられていません」と答えてください。\n\n' +
+    'あなたはポッドキャストエピソードの内容について質問に答えるアシスタントです。日本語で答えてください。\n' +
+    '- エピソードの内容に関する質問には、以下のエピソード情報に基づいて簡潔かつ具体的に答える。\n' +
+    '- エピソード情報に含まれない内容を聞かれたら、Google 検索で調べて、箇条書き（・）で簡潔にまとめる。' +
+    'その場合は冒頭に「エピソード外の情報です」と一言添える。\n' +
+    '- 検索しても分からないことは、分からないと正直に答える。\n\n' +
     ctx.join('\n\n');
 
   const res = await fetch(`${API_BASE}/v1beta/models/${MODEL}:generateContent`, {
@@ -148,6 +150,7 @@ export async function chatAboutEpisode({ apiKey, show, episode, context, aiResul
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemText }] },
       contents: history.slice(-20).map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
+      tools: [{ google_search: {} }], // エピソード外の質問はウェブ検索で補完
       generationConfig: { temperature: 0.6 },
     }),
   });

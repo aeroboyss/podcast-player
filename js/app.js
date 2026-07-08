@@ -616,6 +616,13 @@ function openChat(show, episode) {
   $('chat-input').focus();
 }
 
+// AI回答の軽量整形（エスケープ済みテキストに適用）: 箇条書き記号と太字のみ
+function formatChatReply(escapedText) {
+  return escapedText
+    .replace(/^\s*[*-]\s+/gm, '・')                       // * / - の箇条書きを・に
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');     // **太字**
+}
+
 function renderChatMessages() {
   if (!chatCtx) return;
   const box = $('chat-messages');
@@ -624,11 +631,11 @@ function renderChatMessages() {
     ? history.map((m) => {
         const cls = m.error ? 'info' : m.role === 'user' ? 'user' : 'model';
         const html = m.role === 'model' && !m.error
-          ? linkifyTimestamps(esc(m.text))
+          ? formatChatReply(linkifyTimestamps(esc(m.text)))
           : esc(m.text);
         return `<div class="chat-msg ${cls}">${html}</div>`;
       }).join('')
-    : `<div class="chat-msg info">このエピソードの内容について AI に質問できます。\n例：「結論は何？」「◯◯について何と言っていた？」</div>`;
+    : `<div class="chat-msg info">このエピソードの内容について AI に質問できます。\n例：「結論は何？」「◯◯について何と言っていた？」\nエピソードにない内容はウェブ検索で調べて答えます。</div>`;
   box.scrollTop = box.scrollHeight;
 }
 
