@@ -685,13 +685,6 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 
     if (!dragging) {
       if (dx > 10 && dx > Math.abs(dy) * 1.2) {
-        // 設定シートが開いているときはスライドせず即閉じる
-        const sheet = $('player-settings-overlay');
-        if (!sheet.classList.contains('hidden')) {
-          sheet.classList.add('hidden');
-          tracking = false;
-          return;
-        }
         panel = frontPanel();
         if (!panel) { tracking = false; return; }
         dragging = true;

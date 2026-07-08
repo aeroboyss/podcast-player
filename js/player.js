@@ -2,7 +2,7 @@
 
 import {
   episodeKey, getPosition, setPosition,
-  getShowRate, setShowRate,
+  getShowRate, setShowRate, PLAYBACK_RATES,
   getShowSkip, getNowPlaying, setNowPlaying,
 } from './storage.js';
 import { scheduleSync } from './sync.js';
@@ -54,10 +54,7 @@ export class Player {
       iconPause: document.getElementById('icon-pause'),
       rewind: document.getElementById('btn-rewind'),
       forward: document.getElementById('btn-forward'),
-      settings: document.getElementById('btn-player-settings'),
-      settingsStatus: document.getElementById('player-settings-status'),
-      settingsOverlay: document.getElementById('player-settings-overlay'),
-      rateOptions: document.getElementById('rate-options'),
+      rateCycle: document.getElementById('btn-rate-cycle'),
       sleep: document.getElementById('btn-sleep'),
       sleepLabel: document.getElementById('sleep-label'),
     };
@@ -107,26 +104,8 @@ export class Player {
       }
     });
 
-    // 再生設定シートの開閉
-    this.el.settings.addEventListener('click', () => {
-      this.el.settingsOverlay.classList.remove('hidden');
-      this._applyRate();
-    });
-    this.el.settingsOverlay.addEventListener('click', (e) => {
-      if (e.target === this.el.settingsOverlay) {
-        this.el.settingsOverlay.classList.add('hidden');
-      }
-    });
-
-    // 倍速の選択（セグメント）
-    this.el.rateOptions.querySelectorAll('[data-rate]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (!this.current) return;
-        setShowRate(this.current.show.id, Number(btn.dataset.rate));
-        this._applyRate();
-        scheduleSync();
-      });
-    });
+    // 倍速（タップで 1.0x → 1.1x → 1.2x をサイクル）
+    this.el.rateCycle.addEventListener('click', () => this.cycleRate());
     this.el.range.addEventListener('input', () => {
       this._seeking = true;
       this.el.current.textContent = fmtTime(Number(this.el.range.value));
@@ -215,30 +194,23 @@ export class Player {
     if (this.current) this.el.bar.classList.remove('hidden');
   }
 
-  // 番組ごとの再生速度を audio・セグメント表示・設定ボタンに反映
+  // 番組ごとの再生速度を audio と倍速ボタン表示に反映
   _applyRate() {
     if (!this.current) return;
     const rate = getShowRate(this.current.show.id);
     this.audio.playbackRate = rate;
     this.audio.defaultPlaybackRate = rate;
-    this.el.rateOptions.querySelectorAll('[data-rate]').forEach((btn) => {
-      btn.classList.toggle('active', Number(btn.dataset.rate) === rate);
-    });
-    this._updateSettingsStatus();
+    this.el.rateCycle.textContent = rate.toFixed(1) + 'x';
+    this.el.rateCycle.classList.toggle('active', rate !== 1);
   }
 
-  // 設定ボタン横に現在の状態（倍速・タイマー残り）を要約表示
-  _updateSettingsStatus() {
-    const parts = [];
-    if (this.current) {
-      const rate = getShowRate(this.current.show.id);
-      if (rate !== 1) parts.push(rate.toFixed(1) + 'x');
-    }
-    if (this._sleepDeadline) {
-      parts.push(Math.ceil((this._sleepDeadline - Date.now()) / 60000) + '分');
-    }
-    this.el.settingsStatus.textContent = parts.join('・');
-    this.el.settings.classList.toggle('active', !!this._sleepDeadline);
+  cycleRate() {
+    if (!this.current) return;
+    const rate = getShowRate(this.current.show.id);
+    const next = PLAYBACK_RATES[(PLAYBACK_RATES.indexOf(rate) + 1) % PLAYBACK_RATES.length];
+    setShowRate(this.current.show.id, next);
+    this._applyRate();
+    scheduleSync();
   }
 
   // ---- 睡眠タイマー（20分で自動停止） ----
@@ -266,8 +238,7 @@ export class Player {
 
   _updateSleepLabel() {
     const remainMin = Math.ceil((this._sleepDeadline - Date.now()) / 60000);
-    this.el.sleepLabel.textContent = `残り ${remainMin}分（タップで解除）`;
-    this._updateSettingsStatus();
+    this.el.sleepLabel.textContent = remainMin + '分';
   }
 
   _clearSleepTimer() {
@@ -275,8 +246,7 @@ export class Player {
     this._sleepInterval = null;
     this._sleepDeadline = null;
     this.el.sleep.classList.remove('active');
-    this.el.sleepLabel.textContent = SLEEP_MINUTES + '分で停止';
-    this._updateSettingsStatus();
+    this.el.sleepLabel.textContent = '';
   }
 
   // エピソードの終わり手前で自動終了（番組ごとの outro 設定）

@@ -564,15 +564,6 @@ html, body {
   min-height: 0;
   position: relative;
 }
-/* 閉じる（下向き）ボタン: 下部の操作列の左端に配置 */
-.btn-fp-collapse {
-  grid-column: 1;
-  justify-self: start;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-fp-collapse svg { width: 22px; height: 22px; fill: currentColor; }
 .fp-scroll {
   height: 100%;
   overflow-y: auto;
@@ -646,14 +637,8 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--accent);
 }
 
-.player-controls {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 2px 0 2px;
-}
+/* 30秒・再生・15秒（常に中央寄せ） */
 .player-transport {
-  grid-column: 2;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -670,68 +655,37 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
-.btn-sleep {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-sleep svg { width: 14px; height: 14px; fill: currentColor; }
-.btn-sleep.active {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.btn-player-settings {
-  grid-column: 3;
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-player-settings svg { width: 17px; height: 17px; fill: currentColor; }
-.btn-player-settings.active {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-#player-settings-status:empty { display: none; }
-
-/* ---------- 再生設定シート ---------- */
-.sheet-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 60;
-}
-.sheet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-elevated);
-  border-radius: 18px 18px 0 0;
-  border-top: 1px solid var(--border);
-  padding: 18px 20px calc(env(safe-area-inset-bottom) + 22px);
-  max-width: 640px;
-  margin: 0 auto;
-}
-.sheet-title {
-  font-size: 15px;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
-.sheet-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 13px 0;
-}
-.sheet-row + .sheet-row { border-top: 1px solid var(--border); }
-.sheet-label { font-size: 14px; }
 .seg-compact { width: 190px; margin: 0; }
 
-/* 狭い画面では中央ボタン群の間隔を詰めて左のボタンとの余白を確保 */
+/* 操作ボタン下のアクション行（5スロット: 閉じる/倍速/空き/タイマー/空き） */
+.fp-actions {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+.fp-actions > :first-child { justify-self: start; }
+.fp-actions > :last-child { justify-self: end; }
+.fp-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 46px;
+  min-height: 38px;
+}
+.fp-action svg { width: 22px; height: 22px; fill: currentColor; }
+.sleep-moon { font-size: 16px; line-height: 1; }
+#sleep-label:empty { display: none; }
+.btn-sleep.active,
+#btn-rate-cycle.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* 狭い画面では中央ボタン群の間隔を詰める */
 @media (max-width: 420px) {
   .player-transport { gap: 20px; }
-  .btn-player-settings { padding: 6px 8px; font-size: 12px; }
 }
 .btn-player {
   position: relative;
