@@ -31,26 +31,22 @@ function fmtDuration(sec) {
   return m >= 60 ? `${Math.floor(m / 60)}時間${m % 60}分` : `${m}分`;
 }
 
-// ---------- タブ切り替え ----------
+// ---------- 画面遷移（ホーム／検索／設定） ----------
+// ホームは常時表示のベース画面。検索・設定はホームの左上歯車／右上虫眼鏡から開く
+// オーバーレイパネル（他のパネルと同じ position:fixed 方式でエッジスワイプ対応）。
 
-const views = { home: $('view-home'), search: $('view-search'), settings: $('view-settings') };
-
-document.querySelectorAll('.tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    // 番組詳細・エピソード詳細のオーバーレイを閉じてからビューを切り替える
-    $('show-panel').classList.add('hidden');
-    $('episode-panel').classList.add('hidden');
-    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
-    const name = tab.dataset.view;
-    Object.entries(views).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
-    if (name === 'home') renderFavorites();
-    // 検索タブは入力欄にフォーカスしてキーボードを開く
-    // （iOS はユーザー操作イベント内でのみ programmatic focus を許可する）
-    if (name === 'search') $('search-input').focus();
-  });
+$('btn-open-settings').addEventListener('click', () => {
+  $('view-settings').classList.remove('hidden');
 });
 
-// パネルの戻るボタン
+$('btn-open-search').addEventListener('click', () => {
+  $('view-search').classList.remove('hidden');
+  // 検索入力欄にフォーカスしてキーボードを開く
+  // （iOS はユーザー操作イベント内でのみ programmatic focus を許可する）
+  $('search-input').focus();
+});
+
+// パネルの戻るボタン（番組詳細・エピソード詳細・検索・設定など共通）
 document.querySelectorAll('[data-close]').forEach((btn) => {
   btn.addEventListener('click', () => $(btn.dataset.close).classList.add('hidden'));
 });
@@ -800,7 +796,7 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
 
   // スライド対象の最前面パネル
   function frontPanel() {
-    for (const id of ['chat-panel', 'episode-panel', 'full-player', 'show-panel']) {
+    for (const id of ['chat-panel', 'episode-panel', 'full-player', 'show-panel', 'view-search', 'view-settings']) {
       const el = $(id);
       if (!el.classList.contains('hidden')) return el;
     }

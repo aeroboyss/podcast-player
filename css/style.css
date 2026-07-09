@@ -10,7 +10,6 @@
   --danger: #ff5c7a;
   --ok: #3ecf8e;
   --border: #2a2f40;
-  --tabbar-h: 56px;
   --player-h: 96px;
 }
 
@@ -40,7 +39,7 @@ html, body {
 /* ---------- layout ---------- */
 #main {
   padding: calc(env(safe-area-inset-top) + 12px) 16px 16px;
-  padding-bottom: calc(var(--tabbar-h) + var(--player-h) + env(safe-area-inset-bottom) + 24px);
+  padding-bottom: calc(var(--player-h) + env(safe-area-inset-bottom) + 24px);
   max-width: 640px;
   margin: 0 auto;
 }
@@ -50,6 +49,29 @@ html, body {
   font-weight: 800;
   margin: 8px 0 16px;
 }
+
+/* ホーム画面ヘッダー: 左=設定(歯車) / 中央=タイトル / 右=検索(虫眼鏡) */
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.home-title { margin: 0; flex: 1; text-align: center; }
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.icon-btn svg { width: 24px; height: 24px; fill: currentColor; }
+.icon-btn:active { opacity: 0.6; }
 
 .empty-note, .status-note {
   color: var(--text-dim);
@@ -213,7 +235,7 @@ html, body {
 }
 .panel-body {
   padding: 4px 16px;
-  padding-bottom: calc(var(--tabbar-h) + var(--player-h) + env(safe-area-inset-bottom) + 24px);
+  padding-bottom: calc(var(--player-h) + env(safe-area-inset-bottom) + 24px);
   max-width: 640px;
   margin: 0 auto;
 }
@@ -621,7 +643,7 @@ html, body {
 .player-bar {
   position: fixed;
   left: 0; right: 0;
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  bottom: env(safe-area-inset-bottom);
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
   padding: 14px 16px;
@@ -816,32 +838,6 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .btn-play svg { width: 26px; height: 26px; }
 
-/* ---------- tab bar ---------- */
-.tabbar {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--bg-elevated);
-  border-top: 1px solid var(--border);
-  display: flex;
-  z-index: 40;
-}
-.tab {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  cursor: pointer;
-}
-.tab svg { width: 24px; height: 24px; fill: currentColor; }
-.tab.active { color: var(--accent); }
 
 .spinner {
   display: inline-block;

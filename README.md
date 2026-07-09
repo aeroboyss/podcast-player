@@ -47,9 +47,10 @@ iPhone の Safari から使う自分用ポッドキャストプレイヤー。
 ## 使い方
 
 1. デプロイした URL を iPhone の Safari で開く（ホーム画面に追加推奨）
-2. 「設定」タブで Gemini API キーを保存（[Google AI Studio](https://aistudio.google.com/apikey) で取得）
-3. 「検索」タブで番組名を検索して登録
-4. 番組 → エピソードを開いて再生、「要約とクイズを生成」で AI 機能を使用
+2. ホーム画面左上の歯車アイコンから設定を開き、Gemini API キーを保存
+   （[Google AI Studio](https://aistudio.google.com/apikey) で取得）
+3. ホーム画面右上の虫眼鏡アイコンから番組名を検索して登録
+4. 番組 → エピソードを開いて再生、「分析とクイズを生成」で AI 機能を使用
 
 データ（お気に入り・API キー・生成結果・再生位置）はすべて端末の localStorage に保存される。
 サーバーには何も送信されない（外部 API との通信のみ）。
@@ -73,7 +74,7 @@ npx serve .        # または python3 -m http.server 8000
 ## ファイル構成
 
 ```
-index.html            シェル（タブ・パネル・プレイヤーバー）
+index.html            シェル（ホーム画面・各パネル・プレイヤーバー）
 css/style.css         スタイル（モバイルファースト・ダークテーマ）
 js/app.js             画面描画・イベント配線
 js/player.js          <audio> 制御・Media Session・再生位置保存
@@ -96,7 +97,8 @@ docs/design.md        設計書
 
 1. [gist スコープのトークンを作成](https://github.com/settings/tokens/new?scopes=gist&description=podcast-player-sync)
    （スコープは gist のみでよい）
-2. 各端末の「設定」タブ →「端末間の同期（GitHub）」に同じトークンを貼って「保存して同期」
+2. 各端末の「設定」（ホーム画面左上の歯車）→「端末間の同期（GitHub）」に
+   同じトークンを貼って「保存して同期」
 
 同期は起動時・変更時（数秒後にまとめて）・アプリのフォアグラウンド復帰時・
 再生の一時停止時に自動実行される。「今すぐ同期」で手動実行も可能。
@@ -130,7 +132,7 @@ npx wrangler deploy
 ```
 
 表示された URL（例 `https://podcast-proxy.xxx.workers.dev`）を使い、アプリの
-「設定」タブの「自前 CORS プロキシ URL」に次の形式で登録する：
+「設定」（ホーム画面左上の歯車）の「自前 CORS プロキシ URL」に次の形式で登録する：
 
 ```
 https://podcast-proxy.xxx.workers.dev/?url=

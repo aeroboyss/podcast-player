@@ -15,17 +15,30 @@
 <body>
 
   <main id="main">
-    <!-- お気に入り -->
+    <!-- ホーム（お気に入り） -->
     <section id="view-home" class="view">
-      <h1 class="view-title">お気に入り</h1>
+      <div class="home-header">
+        <button id="btn-open-settings" class="icon-btn" aria-label="設定">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 00.12-.61l-1.92-3.32a.5.5 0 00-.59-.22l-2.39.96a7.03 7.03 0 00-1.62-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 00-.59.22L2.68 8.87a.5.5 0 00.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.5.5 0 00-.12.61l1.92 3.32c.14.24.42.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.23.09.49 0 .59-.22l1.92-3.32a.5.5 0 00-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+        </button>
+        <h1 class="view-title home-title">お気に入り</h1>
+        <button id="btn-open-search" class="icon-btn" aria-label="検索">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>
+        </button>
+      </div>
       <div id="favorites-list" class="show-list"></div>
       <p id="favorites-empty" class="empty-note hidden">
-        まだ番組が登録されていません。<br>「検索」タブから番組を探して登録してください。
+        まだ番組が登録されていません。<br>右上の検索アイコンから番組を探して登録してください。
       </p>
     </section>
+  </main>
 
-    <!-- 検索 -->
-    <section id="view-search" class="view hidden">
+  <!-- 検索パネル -->
+  <div id="view-search" class="panel hidden">
+    <header class="panel-header">
+      <button class="btn-back" data-close="view-search">‹ 戻る</button>
+    </header>
+    <div class="panel-body">
       <h1 class="view-title">番組を検索</h1>
       <form id="search-form" class="search-form">
         <input type="search" id="search-input" placeholder="番組名で検索" autocomplete="off" enterkeyhint="search">
@@ -33,10 +46,15 @@
       </form>
       <div id="search-status" class="status-note hidden"></div>
       <ul id="search-results" class="result-list"></ul>
-    </section>
+    </div>
+  </div>
 
-    <!-- 設定 -->
-    <section id="view-settings" class="view hidden">
+  <!-- 設定パネル -->
+  <div id="view-settings" class="panel hidden">
+    <header class="panel-header">
+      <button class="btn-back" data-close="view-settings">‹ 戻る</button>
+    </header>
+    <div class="panel-body">
       <h1 class="view-title">設定</h1>
       <p id="persist-note" class="settings-desc hidden" style="padding: 0 4px 12px">
         ⚠️ この端末では設定が自動削除される可能性があります。Safari で
@@ -80,8 +98,8 @@
         <button id="sync-now-btn" class="btn btn-sub">今すぐ同期</button>
         <div id="sync-status" class="status-note"></div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <!-- 番組詳細パネル -->
   <div id="show-panel" class="panel hidden">
@@ -171,22 +189,6 @@
       </div>
     </div>
   </div>
-
-  <!-- タブバー -->
-  <nav id="tabbar" class="tabbar">
-    <button class="tab active" data-view="home">
-      <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-      <span>お気に入り</span>
-    </button>
-    <button class="tab" data-view="search">
-      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>
-      <span>検索</span>
-    </button>
-    <button class="tab" data-view="settings">
-      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 00.12-.61l-1.92-3.32a.5.5 0 00-.59-.22l-2.39.96a7.03 7.03 0 00-1.62-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 00-.59.22L2.68 8.87a.5.5 0 00.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.5.5 0 00-.12.61l1.92 3.32c.14.24.42.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.23.09.49 0 .59-.22l1.92-3.32a.5.5 0 00-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
-      <span>設定</span>
-    </button>
-  </nav>
 
   <script type="module" src="js/app.js"></script>
 </body>
