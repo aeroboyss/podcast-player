@@ -45,7 +45,6 @@ export class Player {
       fpShowTitle: document.getElementById('fp-show-title'),
       fpOpenEpisode: document.getElementById('fp-open-episode'),
       fpDesc: document.getElementById('fp-desc'),
-      artwork: document.getElementById('player-artwork'),
       range: document.getElementById('player-range'),
       current: document.getElementById('player-current'),
       duration: document.getElementById('player-duration'),
@@ -336,7 +335,6 @@ export class Player {
     // ミニバーとフルプレイヤー両方の表示内容を更新
     this.el.epTitle.textContent = episode.title;
     this.el.showTitle.textContent = show.title;
-    this.el.artwork.src = show.artwork || '';
     this.el.fpEpTitle.textContent = episode.title;
     this.el.fpShowTitle.textContent = show.title;
     this.el.fpDesc.innerHTML = episode.description

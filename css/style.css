@@ -667,15 +667,7 @@ html, body {
   padding: calc(env(safe-area-inset-top) + 14px) 20px 16px;
   text-align: center;
 }
-.fp-artwork {
-  width: 140px; height: 140px;
-  border-radius: 18px;
-  object-fit: cover;
-  background: var(--card);
-  display: block;
-  margin: 6px auto 12px;
-}
-.fp-ep-title { font-size: 17px; font-weight: 800; line-height: 1.4; }
+.fp-ep-title { font-size: 17px; font-weight: 800; line-height: 1.4; margin-top: 4px; }
 .fp-show-title {
   font-size: 13px;
   color: var(--accent);
@@ -699,13 +691,14 @@ html, body {
   padding-top: 14px;
 }
 .fp-bottom {
-  flex: 0 0 44%;
+  /* コンテンツ分だけの高さにして、残りを上部（概要）に譲る */
+  flex: none;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  gap: 14px;
   border-top: 1px solid var(--border);
   background: var(--bg-elevated);
-  padding: 6px 20px calc(env(safe-area-inset-bottom) + 14px);
+  padding: 12px 20px calc(env(safe-area-inset-bottom) + 10px);
 }
 .fp-bottom .btn-play { width: 72px; height: 72px; }
 .fp-bottom .btn-play svg { width: 34px; height: 34px; }
