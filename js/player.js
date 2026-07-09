@@ -6,7 +6,7 @@ import {
   getShowSkip, getNowPlaying, setNowPlaying,
 } from './storage.js';
 import { scheduleSync } from './sync.js';
-import { esc, linkifyTimestamps } from './format.js';
+import { esc, linkifyText } from './format.js';
 
 const SKIP_FORWARD = 15;
 const SKIP_BACK = 30;
@@ -338,7 +338,7 @@ export class Player {
     this.el.fpEpTitle.textContent = episode.title;
     this.el.fpShowTitle.textContent = show.title;
     this.el.fpDesc.innerHTML = episode.description
-      ? linkifyTimestamps(esc(episode.description))
+      ? linkifyText(esc(episode.description))
       : '<span class="ai-note">このエピソードには概要がありません</span>';
     this.el.range.value = String(Math.floor(startAt));
     this.el.current.textContent = fmtTime(startAt);

@@ -418,6 +418,13 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 .ts-link:active { opacity: 0.6; }
+.ep-desc a, .fp-desc a, .chat-msg a {
+  color: var(--accent);
+  text-decoration: underline;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.ep-desc a:active, .fp-desc a:active, .chat-msg a:active { opacity: 0.6; }
 
 /* AI section */
 .ai-section {

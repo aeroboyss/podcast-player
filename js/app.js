@@ -12,7 +12,7 @@ import { syncNow, scheduleSync, onSyncApplied, initSync } from './sync.js';
 import { searchPodcasts } from './itunes.js';
 import { loadShowData } from './episodes.js';
 import { generateStudyAid, testApiKey, fetchChatContext, chatAboutEpisode } from './gemini.js';
-import { esc, linkifyTimestamps } from './format.js';
+import { esc, linkifyText } from './format.js';
 import { Player } from './player.js';
 
 const player = new Player();
@@ -378,7 +378,7 @@ function openEpisode(show, episode) {
     <div class="ai-section" id="ai-section"></div>
     ${episode.description ? `
       <h3 class="section-heading">エピソード概要</h3>
-      <div class="ep-desc">${linkifyTimestamps(esc(episode.description))}</div>` : ''}
+      <div class="ep-desc">${linkifyText(esc(episode.description))}</div>` : ''}
   `;
 
   $('ep-play-btn').addEventListener('click', () => player.playEpisode(show, episode));
@@ -425,14 +425,7 @@ function renderAiSection(show, episode) {
     return;
   }
 
-  const hasTranscript = (episode.transcripts || []).length > 0;
   section.innerHTML = `
-    <h3>AI 分析とクイズ</h3>
-    <p class="ai-note">
-      重要ポイント・立てるべき問い（3つ）・理解度クイズ（4択5問）を生成します。${hasTranscript
-        ? 'この番組は文字起こしを提供しているため、テキストから生成します。'
-        : '文字起こしがないため、エピソード音声を Gemini に渡して生成します。音声の長さによっては数分かかります。'}
-    </p>
     <button class="btn btn-primary btn-block" id="ai-generate-btn">分析とクイズを生成</button>
     <div id="ai-status"></div>
   `;
@@ -631,7 +624,7 @@ function renderChatMessages() {
     ? history.map((m) => {
         const cls = m.error ? 'info' : m.role === 'user' ? 'user' : 'model';
         const html = m.role === 'model' && !m.error
-          ? formatChatReply(linkifyTimestamps(esc(m.text)))
+          ? formatChatReply(linkifyText(esc(m.text)))
           : esc(m.text);
         return `<div class="chat-msg ${cls}">${html}</div>`;
       }).join('')
