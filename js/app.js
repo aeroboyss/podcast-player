@@ -606,6 +606,8 @@ function openChat(show, episode) {
   $('chat-title').textContent = episode.title;
   $('chat-panel').classList.remove('hidden');
   renderChatMessages();
+  $('chat-input').value = '';
+  autoResizeChatInput();
   $('chat-input').focus();
 }
 
@@ -650,6 +652,7 @@ async function sendChat() {
 
   history.push({ role: 'user', text: q });
   input.value = '';
+  autoResizeChatInput();
   renderChatMessages();
 
   // 入力中インジケータ
@@ -685,9 +688,21 @@ async function sendChat() {
   input.focus();
 }
 
+// 内容量に応じて入力欄の高さを自動調整する（最大高さは CSS の max-height で頭打ち）
+function autoResizeChatInput() {
+  const input = $('chat-input');
+  input.style.height = 'auto';
+  input.style.height = input.scrollHeight + 'px';
+}
+
 $('chat-send').addEventListener('click', sendChat);
+$('chat-input').addEventListener('input', autoResizeChatInput);
 $('chat-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.isComposing) sendChat();
+  // Enter で送信、Shift+Enter または日本語入力の変換確定 Enter は改行として扱う
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    sendChat();
+  }
 });
 // 回答内のタイムスタンプでその位置へジャンプ
 $('chat-messages').addEventListener('click', (e) => {
