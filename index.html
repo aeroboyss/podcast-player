@@ -121,10 +121,10 @@
 
   <!-- ミニプレイヤー（未再生・一時停止時） -->
   <div id="player-bar" class="player-bar hidden">
-    <div id="player-mini-titles" class="mini-titles">
-      <div id="player-episode-title" class="player-ep-title"></div>
-      <div id="player-show-title" class="player-show-title"></div>
-    </div>
+    <button id="btn-mini-artwork" class="mini-artwork-btn" aria-label="番組のエピソード一覧を開く">
+      <img id="player-mini-artwork" class="mini-artwork" alt="">
+    </button>
+    <div id="player-episode-title" class="player-ep-title" aria-label="再生画面を開く"></div>
     <button id="btn-play-mini" class="btn-play-mini" aria-label="再生/停止">
       <svg id="icon-play-mini" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       <svg id="icon-pause-mini" viewBox="0 0 24 24" class="hidden"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>

@@ -33,9 +33,9 @@ export class Player {
 
     this.el = {
       bar: document.getElementById('player-bar'),
-      miniTitles: document.getElementById('player-mini-titles'),
+      miniArtworkBtn: document.getElementById('btn-mini-artwork'),
+      miniArtwork: document.getElementById('player-mini-artwork'),
       epTitle: document.getElementById('player-episode-title'),
-      showTitle: document.getElementById('player-show-title'),
       playMini: document.getElementById('btn-play-mini'),
       iconPlayMini: document.getElementById('icon-play-mini'),
       iconPauseMini: document.getElementById('icon-pause-mini'),
@@ -80,8 +80,12 @@ export class Player {
     this.el.sleep.addEventListener('click', () => this.toggleSleepTimer());
 
     // ミニバーのタイトルタップ → フルプレイヤーを開く
-    this.el.miniTitles.addEventListener('click', () => {
+    this.el.epTitle.addEventListener('click', () => {
       if (this.current) this.expandPlayer();
+    });
+    // ミニバーの番組アイコンタップ → 番組のエピソード一覧へ
+    this.el.miniArtworkBtn.addEventListener('click', () => {
+      if (this.current) this.onOpenShow?.(this.current.show);
     });
     // フルプレイヤーの閉じるボタン（再生は継続）
     this.el.fpCollapse.addEventListener('click', () => this.collapsePlayer());
@@ -334,7 +338,7 @@ export class Player {
 
     // ミニバーとフルプレイヤー両方の表示内容を更新
     this.el.epTitle.textContent = episode.title;
-    this.el.showTitle.textContent = show.title;
+    this.el.miniArtwork.src = show.artwork || '';
     this.el.fpEpTitle.textContent = episode.title;
     this.el.fpShowTitle.textContent = show.title;
     this.el.fpDesc.innerHTML = episode.description
