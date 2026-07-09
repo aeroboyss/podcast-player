@@ -27,7 +27,7 @@ html, body {
 }
 
 /* 長い URL や連続文字列がはみ出さないよう本文テキストは折り返す */
-.ep-desc, .fp-desc, .show-desc, .ai-summary, .ai-qa-a, .ai-keypoints li,
+.ep-desc, .fp-desc, .ai-summary, .ai-qa-a, .ai-keypoints li,
 .ai-qa-q, .quiz-q-text, .quiz-choice, .quiz-explain, .episode-title,
 .result-title, .result-author, .ai-error, .ai-note {
   overflow-wrap: break-word;
@@ -224,20 +224,15 @@ html, body {
   padding: calc(env(safe-area-inset-top) + 8px) 12px 8px;
   z-index: 2;
 }
-.btn-back {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 17px;
-  font-weight: 600;
-  padding: 6px 8px;
-  cursor: pointer;
-}
 .panel-body {
   padding: 4px 16px;
   padding-bottom: calc(var(--player-h) + env(safe-area-inset-bottom) + 24px);
   max-width: 640px;
   margin: 0 auto;
+}
+/* ヘッダー（戻るボタン）を持たないパネルで、ノッチ等を避ける上部余白を確保 */
+.panel-body-top {
+  padding-top: calc(env(safe-area-inset-top) + 16px);
 }
 
 /* show detail */
@@ -251,24 +246,6 @@ html, body {
 }
 .show-header h2 { font-size: 20px; line-height: 1.3; }
 .show-header .show-author { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
-.show-desc {
-  font-size: 14px;
-  color: var(--text-dim);
-  line-height: 1.7;
-  margin-bottom: 8px;
-}
-.desc-clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.desc-toggle {
-  background: none; border: none;
-  color: var(--accent);
-  font-size: 13px; font-weight: 600;
-  padding: 2px 0 14px;
-}
 
 .section-heading {
   font-size: 16px; font-weight: 700;
@@ -428,6 +405,36 @@ html, body {
 .ep-detail-show { color: var(--text-dim); font-size: 13px; }
 .ep-detail-title { font-size: 20px; font-weight: 800; line-height: 1.35; margin: 6px 0 4px; }
 .ep-detail-date { color: var(--text-dim); font-size: 13px; margin-bottom: 14px; }
+
+/* エピソードページの操作行: 再生・AIに質問・分析生成を横一列のアイコンボタンで */
+.ep-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.ep-action {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 6px;
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ep-action svg { width: 24px; height: 24px; fill: currentColor; }
+.ep-action:active { opacity: 0.65; }
+.ep-action-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .ep-desc { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-line; }
 .ts-link {
   background: none;

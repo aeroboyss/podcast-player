@@ -46,11 +46,6 @@ $('btn-open-search').addEventListener('click', () => {
   $('search-input').focus();
 });
 
-// パネルの戻るボタン（番組詳細・エピソード詳細・検索・設定など共通）
-document.querySelectorAll('[data-close]').forEach((btn) => {
-  btn.addEventListener('click', () => $(btn.dataset.close).classList.add('hidden'));
-});
-
 // ---------- お気に入り ----------
 
 function renderFavorites() {
@@ -161,7 +156,6 @@ async function openShow(show) {
   }
   if (token !== showPanelToken) return;
 
-  const desc = feed.description || '';
   body.innerHTML = `
     <div class="show-header">
       <img src="${esc(show.artwork || feed.artwork)}" alt="">
@@ -173,9 +167,6 @@ async function openShow(show) {
         </button>
       </div>
     </div>
-    ${desc ? `
-      <div class="show-desc desc-clamp" id="show-desc">${esc(desc)}</div>
-      <button class="desc-toggle" id="desc-toggle">すべて表示</button>` : ''}
     <details class="skip-settings">
       <summary class="skip-summary">
         <span>再生・表示の設定</span>
@@ -301,15 +292,6 @@ async function openShow(show) {
     scheduleSync();
   });
 
-  const toggle = $('desc-toggle');
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      const el = $('show-desc');
-      const clamped = el.classList.toggle('desc-clamp');
-      toggle.textContent = clamped ? 'すべて表示' : '閉じる';
-    });
-  }
-
   // 冒頭/終わりスキップの設定（5秒刻み）
   function renderSkipVals() {
     const s = getShowSkip(show.id);
@@ -369,8 +351,20 @@ function openEpisode(show, episode) {
       ${esc(fmtDate(episode.pubDate))}
       ${episode.durationSec ? ' ・ ' + esc(fmtDuration(episode.durationSec)) : ''}
     </div>
-    <button class="btn btn-primary btn-block" id="ep-play-btn">▶ このエピソードを再生</button>
-    <button class="btn btn-sub btn-block" id="ep-chat-btn">💬 このエピソードについて AI に質問</button>
+    <div class="ep-actions">
+      <button class="ep-action ep-action-primary" id="ep-play-btn" aria-label="このエピソードを再生">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span>再生</span>
+      </button>
+      <button class="ep-action" id="ep-chat-btn" aria-label="このエピソードについて AI に質問">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 9h10v2H7V9zm6 5H7v-2h6v2zm4-6H7V6h10v2z"/></svg>
+        <span>AIに質問</span>
+      </button>
+      <button class="ep-action" id="ep-analyze-btn" aria-label="分析とクイズを生成">
+        <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+        <span>分析・クイズ</span>
+      </button>
+    </div>
     <div class="ai-section" id="ai-section"></div>
     ${episode.description ? `
       <h3 class="section-heading">エピソード概要</h3>
@@ -379,6 +373,12 @@ function openEpisode(show, episode) {
 
   $('ep-play-btn').addEventListener('click', () => player.playEpisode(show, episode));
   $('ep-chat-btn').addEventListener('click', () => openChat(show, episode));
+  $('ep-analyze-btn').addEventListener('click', () => {
+    const key = episodeKey(show.id, episode);
+    // 未生成・未進行中なら生成開始、それ以外（進行中/生成済み）は結果セクションへスクロール
+    if (!getAiResult(key) && !aiInFlight.has(key)) runGenerate(show, episode);
+    $('ai-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   // 概要内のタイムスタンプタップでその位置へジャンプ
   body.querySelector('.ep-desc')?.addEventListener('click', (e) => {
@@ -421,11 +421,9 @@ function renderAiSection(show, episode) {
     return;
   }
 
-  section.innerHTML = `
-    <button class="btn btn-primary btn-block" id="ai-generate-btn">分析とクイズを生成</button>
-    <div id="ai-status"></div>
-  `;
-  $('ai-generate-btn').addEventListener('click', () => runGenerate(show, episode));
+  // 未生成・未進行中の状態: 生成は上部の「分析・クイズ」ボタンから行うため、
+  // ここではエラー等のステータス表示領域だけを用意する
+  section.innerHTML = `<div id="ai-status"></div>`;
 }
 
 // 生成の本体（手動・自動共通）。多重実行と生成済みをガードする

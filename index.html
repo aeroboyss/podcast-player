@@ -33,12 +33,9 @@
     </section>
   </main>
 
-  <!-- 検索パネル -->
+  <!-- 検索パネル（左端スワイプで戻る） -->
   <div id="view-search" class="panel hidden">
-    <header class="panel-header">
-      <button class="btn-back" data-close="view-search">‹ 戻る</button>
-    </header>
-    <div class="panel-body">
+    <div class="panel-body panel-body-top">
       <h1 class="view-title">番組を検索</h1>
       <form id="search-form" class="search-form">
         <input type="search" id="search-input" placeholder="番組名で検索" autocomplete="off" enterkeyhint="search">
@@ -49,12 +46,9 @@
     </div>
   </div>
 
-  <!-- 設定パネル -->
+  <!-- 設定パネル（左端スワイプで戻る） -->
   <div id="view-settings" class="panel hidden">
-    <header class="panel-header">
-      <button class="btn-back" data-close="view-settings">‹ 戻る</button>
-    </header>
-    <div class="panel-body">
+    <div class="panel-body panel-body-top">
       <h1 class="view-title">設定</h1>
       <p id="persist-note" class="settings-desc hidden" style="padding: 0 4px 12px">
         ⚠️ この端末では設定が自動削除される可能性があります。Safari で
@@ -101,26 +95,19 @@
     </div>
   </div>
 
-  <!-- 番組詳細パネル -->
+  <!-- 番組詳細パネル（左端スワイプで戻る） -->
   <div id="show-panel" class="panel hidden">
-    <header class="panel-header">
-      <button class="btn-back" data-close="show-panel">‹ 戻る</button>
-    </header>
-    <div id="show-panel-body" class="panel-body"></div>
+    <div id="show-panel-body" class="panel-body panel-body-top"></div>
   </div>
 
-  <!-- エピソード詳細パネル -->
+  <!-- エピソード詳細パネル（左端スワイプで戻る） -->
   <div id="episode-panel" class="panel hidden">
-    <header class="panel-header">
-      <button class="btn-back" data-close="episode-panel">‹ 戻る</button>
-    </header>
-    <div id="episode-panel-body" class="panel-body"></div>
+    <div id="episode-panel-body" class="panel-body panel-body-top"></div>
   </div>
 
-  <!-- AI質問チャットパネル -->
+  <!-- AI質問チャットパネル（左端スワイプで戻る） -->
   <div id="chat-panel" class="panel chat-panel hidden">
     <header class="panel-header chat-header">
-      <button class="btn-back" data-close="chat-panel">‹ 戻る</button>
       <div class="chat-title" id="chat-title"></div>
     </header>
     <div id="chat-messages" class="chat-messages"></div>
