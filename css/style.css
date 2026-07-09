@@ -643,10 +643,10 @@ html, body {
 .player-bar {
   position: fixed;
   left: 0; right: 0;
-  bottom: env(safe-area-inset-bottom);
+  bottom: 0; /* 背景は画面最下端まで。操作部はセーフエリア分の下パディングで持ち上げる */
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
-  padding: 14px 16px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   gap: 14px;
