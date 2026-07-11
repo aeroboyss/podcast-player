@@ -879,6 +879,27 @@ player.onPlayStarted = (show, episode) => maybeAutoGenerate(show, episode);
   }, { passive: true });
 })();
 
+// 画面最上部（ステータスバー相当）タップで、表示中の画面を一番上までスクロール
+// （iOS のステータスバータップと同じ挙動を Web アプリ側で再現）
+$('scroll-top-tap').addEventListener('click', () => {
+  const toTop = (el) => el.scrollTo({ top: 0, behavior: 'smooth' });
+  if (!$('chat-panel').classList.contains('hidden')) {
+    toTop($('chat-messages'));
+  } else if (!$('episode-panel').classList.contains('hidden')) {
+    toTop($('episode-panel'));
+  } else if (!$('full-player').classList.contains('hidden')) {
+    document.querySelector('.fp-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (!$('show-panel').classList.contains('hidden')) {
+    toTop($('show-panel'));
+  } else if (!$('view-search').classList.contains('hidden')) {
+    toTop($('view-search'));
+  } else if (!$('view-settings').classList.contains('hidden')) {
+    toTop($('view-settings'));
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
 // ---------- 初期表示 ----------
 
 // localStorage の自動削除（iOS Safari の 7 日 ITP 等）を防ぐため永続化を要求。

@@ -36,6 +36,21 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* 画面最上部タップでスクロールトップ（ステータスバー相当。他のUIより手前に固定）。
+   各パネルの本文はいずれも env(safe-area-inset-top) より下から始まるため、
+   高さをこの値ちょうどにすれば他のUI操作と重ならない。
+   セーフエリアが無い環境（PCブラウザ等）では高さ0になり自然に無効化される。 */
+#scroll-top-tap {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: env(safe-area-inset-top);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  z-index: 60;
+}
+
 /* ---------- layout ---------- */
 #main {
   padding: calc(env(safe-area-inset-top) + 12px) 16px 16px;

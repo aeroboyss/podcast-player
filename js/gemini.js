@@ -161,6 +161,40 @@ export async function chatAboutEpisode({ apiKey, show, episode, context, aiResul
   return text.trim();
 }
 
+// 文字起こしを Google 検索ツール併用で分析し、不足する背景情報を補った下書きテキストを作る。
+// responseSchema（構造化JSON出力）は Gemini 3 系でしか検索ツールと併用できないため、
+// gemini-2.5-flash では「検索補完付きの下書き（プレーンテキスト）→ 構造化JSON化」の2段階で行う。
+async function draftFromTranscriptWithSearch(apiKey, show, episode, transcriptText) {
+  const prompt = [
+    `ポッドキャスト番組「${show.title}」のエピソード「${episode.title}」の文字起こしを読み、`,
+    '内容を整理してください。',
+    '',
+    '- 文字起こしに書かれている話の流れ・主張・具体的な事実を漏れなく整理する。',
+    '- 文字起こしの中で言及されているが背景説明が不足している固有名詞・出来事・技術用語などがあれば、',
+    '  Google 検索で調べて補足情報を加える（検索で補った部分は文中に「（検索補足）」と明記する）。',
+    '- 検索しても分からないことは無理に埋めない。',
+    '- 出力は日本語のプレーンテキストで、後続の要約・クイズ作成に使えるだけの詳しさで書くこと。',
+    '',
+    '--- 文字起こし ---',
+    transcriptText,
+  ].join('\n');
+
+  const res = await fetch(`${API_BASE}/v1beta/models/${MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      tools: [{ google_search: {} }],
+      generationConfig: { temperature: 0.4 },
+    }),
+  });
+  if (!res.ok) throw new Error(await describeGoogleError(res, 'Gemini API エラー（検索補完）'));
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('');
+  if (!text) throw new Error('検索補完付きの下書き生成に失敗しました');
+  return text.trim();
+}
+
 async function callGenerate(apiKey, parts) {
   const res = await fetch(
     `${API_BASE}/v1beta/models/${MODEL}:generateContent`,
@@ -266,7 +300,8 @@ function normalizeAudioMime(type) {
 export async function generateStudyAid({ apiKey, show, episode, onStatus }) {
   const instruction = buildInstruction(show, episode);
 
-  // 1) transcript があればテキスト経路
+  // 1) transcript があればテキスト経路。文字起こしを主情報源とし、
+  //    そこで言及されているが説明不足な事柄は Google 検索で補ってから要約・クイズ化する。
   const transcript = pickTranscript(episode.transcripts || []);
   if (transcript) {
     onStatus?.('文字起こしを取得中…');
@@ -274,9 +309,18 @@ export async function generateStudyAid({ apiKey, show, episode, onStatus }) {
       let text = await fetchTranscriptText(transcript);
       if (text.length > 200) {
         if (text.length > MAX_TRANSCRIPT_CHARS) text = text.slice(0, MAX_TRANSCRIPT_CHARS);
+
+        let content = text;
+        try {
+          onStatus?.('文字起こしを分析し、不足情報を Web 検索で補完中…');
+          content = await draftFromTranscriptWithSearch(apiKey, show, episode, text);
+        } catch (e) {
+          console.warn('検索補完に失敗、文字起こしをそのまま使用:', e);
+        }
+
         onStatus?.('要約とクイズを生成中…');
         const result = await callGenerate(apiKey, [
-          { text: instruction + '\n\n--- 文字起こし ---\n' + text },
+          { text: instruction + '\n\n--- エピソード内容（文字起こしに基づく。Web検索で補足済みの場合あり）---\n' + content },
         ]);
         return { ...result, source: 'transcript', generatedAt: Date.now() };
       }
